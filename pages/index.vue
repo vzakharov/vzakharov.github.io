@@ -33,7 +33,7 @@
             primary: true,
           }, {
             name: 'No-code prototyping',
-            url: '/no-code-prototyping'
+            url: '/prototyping'
           }, {
             name: 'Prompt engineering',
             url: '/prompt-engineering'
@@ -42,7 +42,7 @@
           :href="service.url"
           :variant="service.primary ? 'primary' : 'outline-primary'"
           v-text="service.name"
-          class="mx-2"
+          class="me-2"
         />
       </b-col>
     </b-row>
