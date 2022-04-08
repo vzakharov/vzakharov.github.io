@@ -2,19 +2,6 @@
   <ContainerSimple
     title="Let’s write something"
   >
-    Here are some of the things I can write for you:
-    <b-row class="mt-2" cols="1" cols-md="2">
-      <b-col
-        v-for="contentType in contentTypes"
-        :key="contentType.name"
-      >
-        <ContentCard
-          v-bind="{ contentType, currentTotalWords }"
-          v-on="{ addToCart }"
-          :size.sync="contentType.size"
-        />
-      </b-col>
-    </b-row>
     <!-- Cart, displayed as a table with total words and total price -->
     <b-row class="mt-2" v-if="cart.length > 0">
       <b-col>
@@ -23,7 +10,19 @@
           class="table-sm"
           foot-clone
         >
-        <!-- Totals in the footer -->
+
+          <!-- Show quantity as a numeric input -->
+          <template #cell(quantity)="{ item }">
+            <b-form-input
+              v-model="item.quantity"
+              type="number"
+              min="0"
+              @change="recountItem(item, parseInt($event))"
+            />
+          </template>
+
+
+          <!-- Totals in the footer -->
           <template #foot(name)>
             TOTAL
           </template>
@@ -39,7 +38,7 @@
             <template
               v-if="totalPrice !== sumBy(cart, 'price')"
             >
-              <div>
+              <div class="text-end">
                 <span
                   class="text-muted"
                   style="text-decoration: line-through; font-weight: normal;"
@@ -51,7 +50,7 @@
                 </span>
               </div>
               <!-- Also show the discount in percentage like "20% off!" -->
-              <div style="font-weight: normal;">
+              <div style="font-weight: normal;" class="text-end">
                 {{ discount }}% off!
               </div>
             </template>
@@ -82,6 +81,20 @@
       </b-col>
     </b-row>
     
+    <!-- Available content types -->
+    <b-row class="mt-2" cols="1" cols-md="2">
+      <b-col
+        v-for="contentType in contentTypes"
+        :key="contentType.name"
+      >
+        <ContentCard
+          v-bind="{ contentType, currentTotalWords }"
+          v-on="{ addToCart }"
+          :size.sync="contentType.size"
+        />
+      </b-col>
+    </b-row>
+
 
   </ContainerSimple>
 </template>
@@ -89,7 +102,7 @@
 <script>
 
   import {
-    sumBy
+    without, sumBy
   } from 'lodash'
 
   import copyPrice from '@/plugins/copyPrice'
@@ -166,6 +179,16 @@
 
       clearCart() {
         this.cart = []
+      },
+
+      recountItem(item, quantity) {
+        // if zero, remove from cart
+        if (!quantity) {
+          this.cart = without(this.cart, item)
+        } else {
+          item.quantity = quantity
+          item.price = this.copyPrice(item.words) * quantity
+        }        
       },
 
       sumBy
