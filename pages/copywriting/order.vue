@@ -51,7 +51,7 @@
               </div>
               <!-- Also show the discount in percentage like "20% off!" -->
               <div style="font-weight: normal;" class="text-end">
-                {{ discount }}% off!
+                ${{ discount }} off!
               </div>
             </template>
             <!-- Otherwise, show the total price in bold -->
@@ -133,7 +133,7 @@
       },
 
       discount() {
-        return Math.round((1 - this.totalPrice / sumBy(this.cart, 'price')) * 100)
+        return sumBy(this.cart, 'price') - this.totalPrice
       }
 
     },
