@@ -1,7 +1,7 @@
 export default {
 
   data() {
-    
+
     let contentTypes = [
       {
         name: 'Landing page',
@@ -36,7 +36,17 @@ export default {
           m: 200,
           l: 300,
         }
-      }, 
+      }, {
+        name: 'Other',
+        description: 'Any other content type that you need to create.',
+        wordsBySize: {
+          s: 100,
+          m: 500,
+          l: 1000,
+          xl: 2000,
+          xxl: 3000
+        }
+      }
     ]
 
     // set size to m for all content types

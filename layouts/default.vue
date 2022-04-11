@@ -5,7 +5,7 @@
 <style>
 
   .close {
-    float: right;
+    /* float: right; */
     font-size: 1.5rem;
     font-weight: 700;
     line-height: 1;

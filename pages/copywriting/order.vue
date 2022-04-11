@@ -41,7 +41,7 @@
           <!-- Show price as dollars -->
           <template #cell(price)="{ item }">
             ${{ getItemPrice(item) }}
-            <span class="close" @click="removeItem(item)"
+            <span class="close float-end" @click="removeItem(item)"
               style="cursor: pointer;"
             >&times;</span>
           </template>
@@ -218,6 +218,7 @@
           v-bind="{ contentType, totalWords }"
           v-on="{ addToCart }"
           :size.sync="contentType.size"
+          :customWords.sync="contentType.customWords"
         />
       </b-col>
     </b-row>
@@ -311,10 +312,11 @@
         let {
           name,
           size,
-          wordsBySize
+          wordsBySize,
+          customWords
         } = contentType
 
-        let words = wordsBySize[size]
+        let words = customWords || wordsBySize[size]
         
         // Count the number of items with the same name and number of words in cart
         let quantity = sumBy(
