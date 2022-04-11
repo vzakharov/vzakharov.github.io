@@ -243,9 +243,9 @@
             this[key] = JSON.parse(localStorage.getItem(key))
           }
 
-          this.$watch(key, value => {
+          this.$watch(key, { deep: true, handler: value => {
             localStorage.setItem(key, JSON.stringify(value))
-          })
+          }})
         })
     },
 
