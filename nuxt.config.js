@@ -2,6 +2,15 @@ export default {
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
 
+  env: {
+    notionApiUrl: process.env.NOTION_API_URL || 'http://localhost:1039/api/notion/',
+    ordersDatabaseId: '3df4dd3f18b3422887a63658bde65815',
+
+    bubbleApiUrl: process.env.BUBBLE_API_URL || 'https://b.ideality.app/api/1.1/wf/',
+
+    vovasEmail: process.env.VOVAS_EMAIL || 'vzakharov@gmail.com',
+  },
+
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     title: 'vzakharov.github.io',

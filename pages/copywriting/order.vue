@@ -17,18 +17,52 @@
               v-model="item.quantity"
               type="number"
               min="0"
-              @change="recountItem(item, parseInt($event))"
+              @input="recountItem(item, { quantity:  $event })"
+              style="width: 4em;"
+            />
+
+            <!-- Also show a button to remove the item from the cart -->
+            <b-button
+              size="sm"
+              class="inline-block"
+              variant="outline-danger"
+              @click="removeItem(item)"
+            >
+              Remove
+            </b-button>
+          </template>
+
+          <!-- Show words per piece as a numeric input with a step of 50 and a minimum of 50 -->
+          <template #cell(words)="{ item }">
+            <b-form-input
+              v-model="item.words"
+              type="number"
+              min="50"
+              step="50"
+              @input="recountItem(item, { words:  $event })"
+              style="width: 6em;"
             />
           </template>
 
+          <!-- Show price as dollars -->
+          <template #cell(price)="{ item }">
+            ${{ item.price }}
+          </template>
+
+          <!-- Show words header as "Words per item" -->
+          <template #head(words)>
+            Words per item
+          </template>
 
           <!-- Totals in the footer -->
           <template #foot(name)>
             TOTAL
           </template>
+
           <template #foot(words)>
-            {{ sumBy(cart, 'words') }} words
+            {{ sumBy(cart, ({ words, quantity }) => words * quantity) }} words
           </template>
+
           <template #foot(quantity)>
             {{ sumBy(cart, 'quantity') }} items
           </template>
@@ -69,13 +103,26 @@
           </template>
         </b-table>
 
-        <!-- Button to clear cart -->
+        <!-- Buttons to place order and clear cart -->
         <b-button
-          variant="outline-danger"
-          class="float-end"
-          @click="clearCart"
+          v-for="(action, index) in [
+            {
+              name: 'Place order',
+              variant: 'success',
+              method: placeOrder
+            },
+            {
+              name: 'Clear cart',
+              variant: 'outline-danger',
+              method: clearCart
+            }
+          ]"
+          :key="index"
+          :variant="action.variant"
+          class="float-end ms-2"
+          v-on="{ click: action.method }"
         >
-          Clear cart
+          {{ action.name }}
         </b-button>
 
       </b-col>
@@ -88,7 +135,7 @@
         :key="contentType.name"
       >
         <ContentCard
-          v-bind="{ contentType, currentTotalWords }"
+          v-bind="{ contentType, totalWords }"
           v-on="{ addToCart }"
           :size.sync="contentType.size"
         />
@@ -102,8 +149,10 @@
 <script>
 
   import {
-    without, sumBy
+    without, sumBy, mapValues
   } from 'lodash'
+
+  import axios from 'axios'
 
   import copyPrice from '@/plugins/copyPrice'
   import contentTypes from '@/plugins/contentTypes'
@@ -124,12 +173,12 @@
 
     computed: {
 
-      currentTotalWords() {
+      totalWords() {
         return sumBy(this.cart, ({ words, quantity }) => words * quantity)
       },
 
       totalPrice() {
-        return this.copyPrice(this.currentTotalWords)
+        return this.copyPrice(this.totalWords)
       },
 
       discount() {
@@ -181,14 +230,80 @@
         this.cart = []
       },
 
-      recountItem(item, quantity) {
-        // if zero, remove from cart
-        if (!quantity) {
+      recountItem(item, changes) {
+        // if quantity is zero, remove from cart
+        if (changes.quantity === 0) {
           this.cart = without(this.cart, item)
         } else {
-          item.quantity = quantity
-          item.price = this.copyPrice(item.words) * quantity
-        }        
+          // Convert each change to a numeric value
+          changes = mapValues(changes, Number)
+
+          Object.assign(item, changes)
+          console.log(item)
+          item.price = this.copyPrice(item.words) * item.quantity
+        }
+      },
+
+      removeItem(item) {
+        this.cart = without(this.cart, item)
+      },
+
+      async placeOrder() {
+        // Send a create page request to notion api proxy including cart details as plain text
+        let content = this.cart.map(({ name, words, quantity }) => {
+          return `${quantity} × ${name} (${words} words each)`
+        }).join('\n')
+        // Include total word count & total price
+        content += `\n\nTotal words: ${this.totalWords}\nTotal price: $${this.totalPrice}`
+
+        let { totalWords, totalPrice } = this
+        let title = `${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })} (${totalWords} words)`
+
+        // Send request to notion 
+        let { 
+          data: { url }
+        } = await axios.post(process.env.notionApiUrl + 'pages', {
+          parent: {
+            database_id: process.env.ordersDatabaseId
+          },
+          properties: {
+            Name: {
+              title: [{
+                text: {
+                  content: title
+                }
+              }]
+            },
+            Words: {
+              number: totalWords
+            },
+            Price: {
+              number: totalPrice
+            },
+          }, children: [{
+            object: 'block',
+            type: 'paragraph',
+            paragraph: {
+              rich_text: [{
+                text: { content }
+              }]
+            }
+          }]
+        })
+
+        // Send email to Vova via Bubble's sendEmailToVova post endpoint (body parameters are email, subject, and emailCopy)
+        axios.post(process.env.bubbleApiUrl + 'sendEmailToVova', {
+          email: process.env.vovasEmail,
+          subject: `New order: ${title}`,
+
+          // content plus url in the copy
+          emailCopy: `
+            ${content}
+
+            ${url}
+          `
+        })
+
       },
 
       sumBy

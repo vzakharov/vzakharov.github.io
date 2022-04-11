@@ -79,7 +79,7 @@
 
   export default {
 
-    props: [ 'contentType', 'currentTotalWords' ],
+    props: [ 'contentType', 'totalWords' ],
 
     mixins: [ copyPrice ],
 
@@ -94,7 +94,7 @@
       },
 
       discountedPrice() {
-        return this.copyPrice(this.words, this.currentTotalWords)
+        return this.copyPrice(this.words, this.totalWords)
       },
 
 
