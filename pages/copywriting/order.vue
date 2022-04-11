@@ -2,8 +2,12 @@
   <ContainerSimple
     title="Let’s write something"
   >
-    <!-- Cart, displayed as a table with total words and total price -->
-    <b-row class="mt-2" v-if="cart.length > 0">
+    <!-- Cart, displayed as a table with total words and total price. Disabled if order is in progress -->
+    <b-row 
+      v-if="cart.length > 0"
+      :disabled="orderInProgress"
+      class="mt-2" 
+    >
       <b-col>
         <b-table
           :items="cart"
@@ -127,6 +131,63 @@
 
       </b-col>
     </b-row>
+
+    <!-- Order status: if order is in progress, show a spinner, otherwise show the order status in either green or red -->
+    <b-row
+      v-if="orderInProgress"
+      class="mt-2"
+    >
+      <b-col>
+        <b-spinner
+          variant="primary"
+          animation="grow"
+          size="sm"
+          class="mr-2"
+        />
+        <span>
+          Placing order...
+        </span>
+      </b-col>
+    </b-row>
+    <b-row
+      v-else
+      class="mt-2"
+    >
+      <b-col>
+        <b-alert
+          :show="orderStatus === 'success'"
+          variant="success"
+          dismissible
+          @dismissed="orderStatus = ''"
+        >
+          Order placed!
+        </b-alert>
+        <b-alert
+          :show="orderStatus === 'error'"
+          variant="danger"
+          dismissible
+          @dismissed="orderStatus = ''"
+        >
+          Something went wrong. Please contact me at <a :href="'mailto:'+vovasEmail">{{ vovasEmail }}</a>.
+          Here’s your order content to copy and paste:
+          <textarea
+            class="form-control"
+            rows="10"
+            readonly
+            v-model="orderContent"
+          />
+
+          <!-- Copy to clipboard link -->
+          <span
+            class="text-muted"
+            @click="$copyText(orderContent); copiedToClipboard = true"
+            style="cursor: pointer;"
+            v-text="copiedToClipboard ? 'Copied!' : 'Copy to clipboard'"
+          />
+
+        </b-alert>
+      </b-col>
+    </b-row>
     
     <!-- Available content types -->
     <b-row class="mt-2" cols="1" cols-md="2">
@@ -167,7 +228,10 @@
     data() {
 
       return {
-        cart: []
+        cart: [],
+        orderInProgress: false,
+        orderStatus: null,
+        copiedToClipboard: false,
       }
     },
 
@@ -183,6 +247,19 @@
 
       discount() {
         return sumBy(this.cart, 'price') - this.totalPrice
+      },
+
+      vovasEmail() {
+        return process.env.vovasEmail
+      },
+
+      orderContent() {
+        let content = this.cart.map(({ name, words, quantity }) => {
+          return `${quantity} × ${name} (${words} words${ quantity > 1 ? ' each' : '' })`
+        }).join('\n')
+        // Include total word count & total price
+        content += `\n\nTotal words: ${this.totalWords}\nTotal price: $${this.totalPrice}`
+        return content
       }
 
     },
@@ -249,60 +326,71 @@
       },
 
       async placeOrder() {
-        // Send a create page request to notion api proxy including cart details as plain text
-        let content = this.cart.map(({ name, words, quantity }) => {
-          return `${quantity} × ${name} (${words} words each)`
-        }).join('\n')
-        // Include total word count & total price
-        content += `\n\nTotal words: ${this.totalWords}\nTotal price: $${this.totalPrice}`
 
-        let { totalWords, totalPrice } = this
-        let title = `${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })} (${totalWords} words)`
+        if (this.orderInProgress)
+          return
+        else
+          this.orderInProgress = true
 
-        // Send request to notion 
-        let { 
-          data: { url }
-        } = await axios.post(process.env.notionApiUrl + 'pages', {
-          parent: {
-            database_id: process.env.ordersDatabaseId
-          },
-          properties: {
-            Name: {
-              title: [{
-                text: {
-                  content: title
-                }
-              }]
+        try {
+
+          let { totalWords, totalPrice, orderContent } = this
+          let title = `${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })} (${totalWords} words)`
+
+          // Send request to notion 
+          let { 
+            data: { url }
+          } = await axios.post(process.env.notionApiUrl + 'pages', {
+            parent: {
+              database_id: process.env.ordersDatabaseId
             },
-            Words: {
-              number: totalWords
-            },
-            Price: {
-              number: totalPrice
-            },
-          }, children: [{
-            object: 'block',
-            type: 'paragraph',
-            paragraph: {
-              rich_text: [{
-                text: { content }
-              }]
-            }
-          }]
-        })
+            properties: {
+              Name: {
+                title: [{
+                  text: {
+                    content: title
+                  }
+                }]
+              },
+              Words: {
+                number: totalWords
+              },
+              Price: {
+                number: totalPrice
+              },
+            }, children: [{
+              object: 'block',
+              type: 'paragraph',
+              paragraph: {
+                rich_text: [{
+                  text: { content: orderContent }
+                }]
+              }
+            }]
+          })
 
-        // Send email to Vova via Bubble's sendEmailToVova post endpoint (body parameters are email, subject, and emailCopy)
-        axios.post(process.env.bubbleApiUrl + 'sendEmailToVova', {
-          email: process.env.vovasEmail,
-          subject: `New order: ${title}`,
+          // Send email to Vova via Bubble's sendEmailToVova post endpoint (body parameters are email, subject, and emailCopy)
+          axios.post(process.env.bubbleApiUrl + 'sendEmailToVova', {
+            email: process.env.vovasEmail,
+            subject: `New order: ${title}`,
 
-          // content plus url in the copy
-          emailCopy: `
-            ${content}
+            // content plus url in the copy
+            emailCopy: `${orderContent}\n\n${url}`
+          })
 
-            ${url}
-          `
-        })
+          this.orderStatus = 'success'
+
+          // clear cart
+          this.clearCart()
+
+        } catch (error) {
+
+          console.error(error)
+          this.orderStatus = 'error'
+
+        } finally {
+          this.orderInProgress = false
+        }
 
       },
 
