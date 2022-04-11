@@ -236,11 +236,17 @@
     },
 
     mounted() {
-      // Load email from localStorage and update localstorage if it's changed
-      this.email = localStorage.getItem('email')
-      this.$watch('email', (email) => {
-        localStorage.setItem('email', email)
-      })
+      // Load cart and email from localStorage and update localstorage if it's changed
+      ['cart', 'email']
+        .forEach(key => {
+          if (localStorage.getItem(key)) {
+            this[key] = JSON.parse(localStorage.getItem(key))
+          }
+
+          this.$watch(key, value => {
+            localStorage.setItem(key, JSON.stringify(value))
+          })
+        })
     },
 
     computed: {
