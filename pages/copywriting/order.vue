@@ -9,6 +9,7 @@
     >
       <b-col>
         <b-table
+          :fields="['name', 'words', 'quantity', 'price']"
           :items="cart"
           class="table-sm"
           foot-clone
@@ -39,7 +40,7 @@
 
           <!-- Show price as dollars -->
           <template #cell(price)="{ item }">
-            ${{ item.price }}
+            ${{ getItemPrice(item) }}
             <span class="close" @click="removeItem(item)"
               style="cursor: pointer;"
             >&times;</span>
@@ -66,14 +67,14 @@
           <template #foot(price)>
             <!-- If total price is not equal to the sum of the prices of the items in the cart, show the base price striked through and not bold, and the discounted price in bold -->
             <template
-              v-if="totalPrice !== sumBy(cart, 'price')"
+              v-if="totalPrice !== sumBy(cart, getItemPrice)"
             >
               <div class="text-end">
                 <span
                   class="text-muted"
                   style="text-decoration: line-through; font-weight: normal;"
                 >
-                  ${{ sumBy(cart, 'price') }}
+                  ${{ sumBy(cart, getItemPrice) }}
                 </span>
                 <span class="h2 text-success">
                   ${{ totalPrice }}
@@ -99,7 +100,26 @@
           </template>
         </b-table>
 
+        <!-- Text area with comments, only shown if addComments is true -->
+        <b-form-textarea
+          ref="comments"
+          v-if="addComments"
+          v-model="comments"
+          placeholder="Enter any information that you think might be helpful"
+          rows="3"
+          class="mb-2"
+        />
+
         <div class="text-end">
+          <!-- Muted text, if clicked, sets addComments to true and focuses the text area on the $nextTick -->
+          <span
+            v-if="!addComments"
+            class="text-muted small"
+            @click="addComments = true; $nextTick(() => $refs.comments.focus())"
+            style="cursor: pointer;"
+            v-text="'Add comments'"
+          />
+
           <!-- Email input -->
           <b-input
             v-model="email"
@@ -114,7 +134,7 @@
             :disabled="!isEmailValid"
             variant="success"
             class="ms-2"
-            v-on="{ click: placeOrder }"
+            @click="placeOrder"
           >
             Place order
           </b-button>
@@ -122,7 +142,7 @@
           <b-button
             variant="outline-danger"
             class="ms-2"
-            v-on="{ click: clearCart }"
+            @click="clearCartAfterConfirmation"
           >
             Clear cart
           </b-button>
@@ -232,6 +252,8 @@
         orderStatus: null,
         copiedToClipboard: false,
         email: '',
+        comments: '',
+        addComments: false,
       }
     },
 
@@ -260,7 +282,7 @@
       },
 
       discount() {
-        return sumBy(this.cart, 'price') - this.totalPrice
+        return sumBy(this.cart, this.getItemPrice) - this.totalPrice
       },
 
       vovasEmail() {
@@ -293,7 +315,6 @@
         } = contentType
 
         let words = wordsBySize[size]
-        let price = this.copyPrice(words)
         
         // Count the number of items with the same name and number of words in cart
         let quantity = sumBy(
@@ -308,21 +329,25 @@
           this.cart.push({
             name,
             words,
-            quantity: 1,
-            price,
+            quantity: 1
           })
         } else {
           let item = this.cart.find(item => {
             return item.name === name && item.words === words
           })
           item.quantity++
-          item.price = price*item.quantity
         }
 
       },
 
       clearCart() {
         this.cart = []
+      },
+
+      clearCartAfterConfirmation() {
+        if (confirm('Are you sure you want to clear your cart? This cannot be undone!')) {
+          this.clearCart()
+        }
       },
 
       recountItem(item, changes) {
@@ -334,8 +359,6 @@
           changes = mapValues(changes, Number)
 
           Object.assign(item, changes)
-          console.log(item)
-          item.price = this.copyPrice(item.words) * item.quantity
         }
       },
 
@@ -353,7 +376,9 @@
         try {
 
           let { totalWords, totalPrice, orderContent, email } = this
-          let title = `${totalWords} words from ${email}`
+
+          // title is email excluding @... / number of words
+          let title = `${email.replace(/@.*/, '')} / ${totalWords} words`
 
           // Send request to notion 
           let {
@@ -383,15 +408,21 @@
                   }
                 }]
               },
-            }, children: [{
-              object: 'block',
-              type: 'paragraph',
-              paragraph: {
+              Comments: {
                 rich_text: [{
-                  text: { content: orderContent }
+                  text: {
+                    content: this.comments
+                  }
+                }]
+              },
+              Content: {
+                rich_text: [{
+                  text: {
+                    content: orderContent
+                  }
                 }]
               }
-            }]
+            }
           })
 
           // Send email to Vova via Bubble's sendEmailToVova post endpoint (body parameters are email, subject, and emailCopy)
@@ -417,6 +448,10 @@
           this.orderInProgress = false
         }
 
+      },
+
+      getItemPrice({ words, quantity }) {
+        return this.copyPrice(words) * quantity
       },
 
       sumBy
