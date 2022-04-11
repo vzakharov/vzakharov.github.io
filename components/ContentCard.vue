@@ -111,7 +111,7 @@
     computed: {
       
       words() {
-        return this.contentType.wordsBySize[this.contentType.size]
+        return this.contentType.customWords || this.contentType.wordsBySize[this.contentType.size]
       },
 
       basePrice() {
