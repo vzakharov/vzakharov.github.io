@@ -26,8 +26,19 @@
     background-color: transparent;
     border: 0;
   }
+  
   a.close.disabled {
     pointer-events: none;
+  }
+
+  a.gray-link {
+    color: #999;
+    text-decoration: none;
+  }
+
+  /* Normal blue color if hovered */
+  a.gray-link:hover {
+    color: #0070f3;
   }
 
 </style>

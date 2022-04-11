@@ -5,7 +5,9 @@
     no-body
   >
     <b-card-header>
-      <b-card-title>
+      <b-card-title
+        :id="contentType.id"
+      >
         {{ contentType.name }}
       </b-card-title>
     </b-card-header>

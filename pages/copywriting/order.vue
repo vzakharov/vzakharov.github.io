@@ -209,10 +209,23 @@
     </b-row>
     
     <!-- Available content types -->
+    <!-- On screens smaller than md, show quick links to #-navigate to the content type -->
+    <div
+      class="d-block d-md-none"
+    >
+      <a
+        v-for="(contentType, index) in contentTypes"
+        :key="index"
+        :href="'#' + contentType.id"
+        v-text="contentType.name"
+        class="small me-2 gray-link"
+      />
+    </div>
+
     <b-row class="mt-2" cols="1" cols-md="2">
       <b-col
         v-for="contentType in contentTypes"
-        :key="contentType.name"
+        :key="contentType.id"
       >
         <ContentCard
           v-bind="{ contentType, totalWords }"

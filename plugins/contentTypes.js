@@ -5,6 +5,7 @@ export default {
     let contentTypes = [
       {
         name: 'Landing page',
+        id: 'landing',
         description: 'Introduce your product or service, explain its benefits, and invite your users to take action.',
         wordsBySize: {
           s: 300,
@@ -13,6 +14,7 @@ export default {
         }
       }, {
         name: 'Blog post',
+        id: 'blog',
         description: 'Share your knowledge or experience with readers and gain their trust and some SEO juice.',
         wordsBySize: {
           s: 700,
@@ -22,6 +24,7 @@ export default {
         }
       }, {
         name: 'Social media post',
+        id: 'smm',
         description: 'Stay connected with your audience while they scroll through their social media feeds.',
         wordsBySize: {
           s: 50,
@@ -30,6 +33,7 @@ export default {
         }
       }, {
         name: 'Email',
+        id: 'email',
         description: 'Send a message to your users, a newsletter to your subscribers, or a cold email to your prospects.',
         wordsBySize: {
           s: 100,
@@ -38,6 +42,7 @@ export default {
         }
       }, {
         name: 'Other',
+        id: 'other',
         description: 'Any other content type that you need to create.',
         wordsBySize: {
           s: 100,
