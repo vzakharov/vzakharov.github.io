@@ -390,7 +390,7 @@
 
         try {
 
-          let { totalWords, totalPrice, orderContent, email } = this
+          let { totalWords, totalPrice, orderContent, email, comments } = this
 
           // title is email excluding @... / number of words
           let title = `${email.replace(/@.*/, '')} / ${totalWords} words`
@@ -426,7 +426,7 @@
               Comments: {
                 rich_text: [{
                   text: {
-                    content: this.comments
+                    content: comments
                   }
                 }]
               },
@@ -445,8 +445,12 @@
             email: process.env.vovasEmail,
             subject: `⚠️ ${title}`,
 
-            // content plus url in the copy
-            emailCopy: `${orderContent}\n\n${url}`
+            // content plus comments plus url in the copy
+            emailCopy: [
+              orderContent,
+              comments,
+              url
+            ].join('\n\n')
           })
 
           this.orderStatus = 'success'
