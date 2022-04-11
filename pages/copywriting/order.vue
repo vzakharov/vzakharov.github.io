@@ -4,8 +4,7 @@
   >
     <!-- Cart, displayed as a table with total words and total price. Disabled if order is in progress -->
     <b-row 
-      v-if="cart.length > 0"
-      :disabled="orderInProgress"
+      v-if="cart.length > 0 && !orderInProgress"
       class="mt-2" 
     >
       <b-col>
@@ -20,20 +19,10 @@
             <b-form-input
               v-model="item.quantity"
               type="number"
-              min="0"
+              min="1"
               @input="recountItem(item, { quantity:  $event })"
               style="width: 4em;"
             />
-
-            <!-- Also show a button to remove the item from the cart -->
-            <b-button
-              size="sm"
-              class="inline-block"
-              variant="outline-danger"
-              @click="removeItem(item)"
-            >
-              Remove
-            </b-button>
           </template>
 
           <!-- Show words per piece as a numeric input with a step of 50 and a minimum of 50 -->
@@ -51,6 +40,9 @@
           <!-- Show price as dollars -->
           <template #cell(price)="{ item }">
             ${{ item.price }}
+            <span class="close" @click="removeItem(item)"
+              style="cursor: pointer;"
+            >&times;</span>
           </template>
 
           <!-- Show words header as "Words per item" -->
@@ -107,27 +99,34 @@
           </template>
         </b-table>
 
-        <!-- Buttons to place order and clear cart -->
-        <b-button
-          v-for="(action, index) in [
-            {
-              name: 'Place order',
-              variant: 'success',
-              method: placeOrder
-            },
-            {
-              name: 'Clear cart',
-              variant: 'outline-danger',
-              method: clearCart
-            }
-          ]"
-          :key="index"
-          :variant="action.variant"
-          class="float-end ms-2"
-          v-on="{ click: action.method }"
-        >
-          {{ action.name }}
-        </b-button>
+        <div class="text-end">
+          <!-- Email input -->
+          <b-input
+            v-model="email"
+            type="email"
+            placeholder="Enter your email"
+            class="ms-2 w-25 d-inline"
+            size="sm"
+          />
+
+          <!-- Button to place order; disabled if email is not valid -->
+          <b-button
+            :disabled="!isEmailValid"
+            variant="success"
+            class="ms-2"
+            v-on="{ click: placeOrder }"
+          >
+            Place order
+          </b-button>
+
+          <b-button
+            variant="outline-danger"
+            class="ms-2"
+            v-on="{ click: clearCart }"
+          >
+            Clear cart
+          </b-button>
+        </div>
 
       </b-col>
     </b-row>
@@ -160,7 +159,7 @@
           dismissible
           @dismissed="orderStatus = ''"
         >
-          Order placed!
+          Order placed! I will get back to you soon.
         </b-alert>
         <b-alert
           :show="orderStatus === 'error'"
@@ -232,7 +231,16 @@
         orderInProgress: false,
         orderStatus: null,
         copiedToClipboard: false,
+        email: '',
       }
+    },
+
+    mounted() {
+      // Load email from localStorage and update localstorage if it's changed
+      this.email = localStorage.getItem('email')
+      this.$watch('email', (email) => {
+        localStorage.setItem('email', email)
+      })
     },
 
     computed: {
@@ -260,7 +268,11 @@
         // Include total word count & total price
         content += `\n\nTotal words: ${this.totalWords}\nTotal price: $${this.totalPrice}`
         return content
-      }
+      },
+
+      isEmailValid() {
+        return this.email?.match(/^[^@]+@[^@]+\.[^@]+$/)
+      },
 
     },
 
@@ -334,11 +346,11 @@
 
         try {
 
-          let { totalWords, totalPrice, orderContent } = this
-          let title = `${new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })} (${totalWords} words)`
+          let { totalWords, totalPrice, orderContent, email } = this
+          let title = `${totalWords} words from ${email}`
 
           // Send request to notion 
-          let { 
+          let {
             data: { url }
           } = await axios.post(process.env.notionApiUrl + 'pages', {
             parent: {
@@ -358,6 +370,13 @@
               Price: {
                 number: totalPrice
               },
+              Email: {
+                rich_text: [{
+                  text: {
+                    content: email
+                  }
+                }]
+              },
             }, children: [{
               object: 'block',
               type: 'paragraph',
@@ -372,7 +391,7 @@
           // Send email to Vova via Bubble's sendEmailToVova post endpoint (body parameters are email, subject, and emailCopy)
           axios.post(process.env.bubbleApiUrl + 'sendEmailToVova', {
             email: process.env.vovasEmail,
-            subject: `New order: ${title}`,
+            subject: `⚠️ ${title}`,
 
             // content plus url in the copy
             emailCopy: `${orderContent}\n\n${url}`
