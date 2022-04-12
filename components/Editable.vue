@@ -9,7 +9,11 @@
       'border-start border-dark': focused && !value && blink,
       editable: true
     }"
-    @input="$emit('input', $event.target.innerText.replace('\xa0', ' '))"
+    @input="
+      val = $event.target.innerText.replace('\xa0', ' ')
+      type === 'number' && ( val = parseFloat(val) )
+      $emit('input', val)
+    "
     @focus="focused=true"
     @blur="focused=false; initialContent=value"
     :style="{
@@ -39,6 +43,9 @@
       },
       lazy: {
         default: false
+      },
+      type: {
+        default: 'text'
       }
     },
 
