@@ -106,6 +106,17 @@
   export default {
 
     data() {
+
+      let hashedInvoice
+
+      try {
+        hashedInvoice = JSON.parse(decodeURIComponent(this.$route.hash.slice(1)))
+      } catch (e) {
+        hashedInvoice = {}
+      }
+
+      console.log('hashedInvoice', hashedInvoice)
+      
       let invoice = {
         number: null,
 
@@ -127,12 +138,9 @@
             price: 100
           }
         ],
-        ...mapValues( this.$route.query,
-          // If it starts with a '{' or '[' it's a JSON string, parse it
-          value => value?.match(/^[\{\[]/) ? JSON.parse(value) : value
-        )
+        ...hashedInvoice
       }
-      // Return all query params as data
+
       return { 
         invoice 
       }
@@ -155,15 +163,10 @@
         }
       })
 
-      // Watch the invoice object for changes, updating query params and localStorage as needed
+      // Watch the invoice object for changes, updating hash params and localStorage as needed
       this.$watch('invoice', invoice => {
 
-        this.$router.replace({ query: 
-          mapValues( invoice,
-            // If it's an object, stringify it
-            value => typeof value === 'object' ? JSON.stringify(value) : value
-          )
-        })
+        this.$router.replace({ hash: JSON.stringify(invoice) })
 
         localStorage.setItem('invoice', JSON.stringify(invoice))
 
