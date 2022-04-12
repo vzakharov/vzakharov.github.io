@@ -139,6 +139,7 @@
             Place order
           </b-button>
 
+          <!-- Button to clear cart -->
           <b-button
             variant="outline-danger"
             class="ms-2"
@@ -146,6 +147,17 @@
           >
             Clear cart
           </b-button>
+
+          <!-- Button to convert card to invoice, if this is Vova -->
+          <b-button
+            v-if="isVova"
+            variant="outline-secondary"
+            class="ms-2"
+            :to="invoiceUrl"
+          >
+            Convert to invoice
+          </b-button>
+
         </div>
 
       </b-col>
@@ -267,7 +279,7 @@
         copiedToClipboard: false,
         email: '',
         comments: '',
-        addComments: false,
+        addComments: false
       }
     },
 
@@ -315,6 +327,27 @@
       isEmailValid() {
         return this.email?.match(/^[^@]+@[^@]+\.[^@]+$/)
       },
+
+      isVova() {
+        return typeof this.$route.query.vova !== 'undefined'
+      },
+
+      invoiceUrl() {
+
+        return '../invoice-generator?invoice=' + JSON.stringify({
+          items: this.cart.map(({ name, words, quantity }) => {
+            return {
+              title: name,
+              quantity: quantity * words,
+              price: this.getItemPrice({ words, quantity })
+            }
+          }),
+          unit: 'words',
+          currency: 'USD',
+          discount: this.discount,
+        })
+
+      }
 
     },
 

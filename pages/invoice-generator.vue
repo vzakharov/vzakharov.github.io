@@ -95,7 +95,7 @@
             </template>
 
             <template #foot(title)>
-              Total
+              {{ modifiers ? `Total without ${modifiers}` : 'Total' }}
             </template>
 
             <template #foot(quantity)>
@@ -120,11 +120,6 @@
 
           <!-- Right-aligned totals: total, discount, grand total -->
           <div class="text-end my-5">
-            <h6
-              v-if="invoice.discount || invoice.tax"
-            >
-              Total: {{ total('price') }} {{ invoice.currency }}
-            </h6>
 
             <div
               v-for="modifier in ['discount', 'tax']"
@@ -138,10 +133,16 @@
                 <span class="h6">
                   {{ upperFirst(modifier) }}:
                   
-                  <Editable
+                  <span
+                    v-if="modifier === 'discount'"
+                    v-text="'('"
+                  /><Editable
                     :ref="modifier"
                     type="number"
                     v-model="invoice[modifier]"
+                  /><span
+                    v-if="modifier === 'discount'"
+                    v-text="')'"
                   />
                 
                   {{ invoice.currency }}
@@ -167,12 +168,12 @@
 
             <h3
               class="mt-3"
-            >Grand total: {{ total('price') - ( invoice.discount || 0 ) + ( invoice.tax || 0 ) }} {{ invoice.currency }}</h3>
+            >Total payable: {{ total('price') - ( invoice.discount || 0 ) + ( invoice.tax || 0 ) }} {{ invoice.currency }}</h3>
           </div>
 
           <!-- Payment details -->
           <h3
-            class="mb-3"
+            class="mb-2"
           >
             Payment details
           </h3>
@@ -181,6 +182,13 @@
             v-model="invoice.paymentDetails"
             tag="div"
           />
+
+          <!-- Initials -->
+          <p
+            class="mt-5"
+          >
+            <Editable v-model="invoice.initials" />
+          </p>
 
           <!-- Div to fill with some whitespace -->
           <div
@@ -217,6 +225,7 @@
         discount: null,
         tax: null,
         paymentDetails: null,
+        initials: null,
       }
 
       return { 
@@ -254,7 +263,8 @@
           quantity: 1,
           price: 100
         }],
-        paymentDetails: 'Enter the payment details here.\nFeel free to add as many lines as needed.'
+        paymentDetails: 'Enter the payment details here.\nFeel free to add as many lines as needed.',
+        initials: 'Jane Doe',
       }
 
       forEach(this.invoice, (value, key) => {
@@ -284,6 +294,10 @@
           day: 'numeric',
           year: 'numeric'
         })
+      },
+
+      modifiers() {
+        return ['discount', 'tax'].filter(modifier => typeof this.invoice[modifier] !== 'undefined').join(' & ')
       },
 
     },
