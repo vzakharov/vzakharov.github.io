@@ -15,9 +15,27 @@
           </p>
         </b-card>
         <template v-else>
-          <h1>Invoice #<Editable v-model="invoice.number" /></h1>
+          <div>
+            <span class="h1">Invoice #<Editable v-model="invoice.number" /></span>
+            <!-- Randomize button -->
+            <span
+              class="text-muted small ms-2 noprint"
+              style="cursor: pointer;"
+              v-text="'<- Randomize'"
+              @click="invoice.number = Math.floor(Math.random() * 1000000)"
+            />
+          </div>
+
           <!-- date -->
           dated <Editable v-model="invoice.date" />
+          <!-- Set to today button, unless invoice is already dated today -->
+          <span
+            v-if="invoice.date != today"
+            class="text-muted small ms-2 noprint"
+            style="cursor: pointer;"
+            v-text="'<- Set to today'"
+            @click="invoice.date = today"
+          />
 
           <!-- Issuer/Payer details, each as a single multiline editable div -->
           <b-row class="my-5">
@@ -27,7 +45,7 @@
               cols="6"
             >
               <h4 v-text="party"/>
-              <Editable v-model="invoice[party.toLowerCase()]" tag="div" />
+              <Editable class="small" v-model="invoice[party.toLowerCase()]" tag="div" />
             </b-col>
           </b-row>
 
@@ -111,34 +129,64 @@
             <div
               v-for="modifier in ['discount', 'tax']"
               :key="modifier"
+              class="mb-2"
             >
-              <h6
-                v-if="invoice[modifier]"
+              <!-- Template if is not undefined -->
+              <template
+                v-if="( typeof invoice[modifier] !== 'undefined' )"
               >
-                {{ upperFirst(modifier) }}:
+                <span class="h6">
+                  {{ upperFirst(modifier) }}:
+                  
+                  <Editable
+                    :ref="modifier"
+                    type="number"
+                    v-model="invoice[modifier]"
+                  />
                 
-                <Editable
-                  :ref="modifier"
-                  type="number"
-                  v-model="invoice[modifier]"
-                />
-              
-                {{ invoice.currency }}
-              </h6>
+                  {{ invoice.currency }}
+                </span>
+                <!-- Small 'close' button to remove discount/tax -->
+                <span 
+                  class="close noprint nofloat" 
+                  @click="invoice[modifier] = undefined"
+                  style="cursor: pointer;"
+                >&times;</span>
+              </template>
               <!-- Small 'Add [modifier]' button otherwise -->
               <b-button
                 v-else
                 class="noprint"
                 variant="light"
                 size="sm"
-                @click="invoice[modifier] = 1; focusOnNextTick(modifier)"
+                @click="invoice[modifier] = 0; focusOnNextTick(modifier)"
               >
                 Add {{ modifier }}
               </b-button>
             </div>
 
-            <h3>Grand total: {{ total('price') - ( invoice.discount || 0 ) + ( invoice.tax || 0 ) }} {{ invoice.currency }}</h3>
+            <h3
+              class="mt-3"
+            >Grand total: {{ total('price') - ( invoice.discount || 0 ) + ( invoice.tax || 0 ) }} {{ invoice.currency }}</h3>
           </div>
+
+          <!-- Payment details -->
+          <h3
+            class="mb-3"
+          >
+            Payment details
+          </h3>
+          <Editable
+            class="small"
+            v-model="invoice.paymentDetails"
+            tag="div"
+          />
+
+          <!-- Div to fill with some whitespace -->
+          <div
+            class="noprint"
+            style="height: 100px;"
+          />
 
         </template>
 
@@ -160,25 +208,15 @@
         number: null,
 
         // Current date as 'Jul 1, 2019'
-        date: new Date().toLocaleDateString('en-US', {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric'
-        }),
+        date: null,
         issuer: null,
         payer: null,
-        currency: 'USD',
+        unit: null,
+        currency: null,
+        items: null,
         discount: null,
         tax: null,
-
-        // One sample item
-        items: [
-          {
-            title: 'Sample item',
-            quantity: 1,
-            price: 100
-          }
-        ]
+        paymentDetails: null,
       }
 
       return { 
@@ -189,42 +227,46 @@
 
     mounted() {
 
-      let hashedInvoice
-      let { invoice } = this
-
-      try {
-        hashedInvoice = JSON.parse(decodeURIComponent(this.$route.hash.slice(1)))
-      } catch (e) {
-        hashedInvoice = {}
-      }
-
       this.invoice = {
-        ...invoice,
-        ...hashedInvoice
+        ...this.invoice,
+        ...JSON.parse(this.$route.query.invoice || '{}')
       }
 
 
       // If no invoice number is set, take the last invoice number from localStorage and increment it
-      if (!invoice.number) {
+      if (!this.invoice.number) {
         let lastInvoiceNumber = Number(localStorage.getItem('lastInvoiceNumber'))
-        invoice.number = lastInvoiceNumber ? lastInvoiceNumber + 1 : 1
+        this.invoice.number = lastInvoiceNumber ? lastInvoiceNumber + 1 : 1
       }
-      localStorage.setItem('lastInvoiceNumber', invoice.number)
+      localStorage.setItem('lastInvoiceNumber', this.invoice.number)
 
-      // Whatever invoice properties are still not set, take them from localStorage
       let locallyStoredInvoice = JSON.parse(localStorage.getItem('invoice'))
-      
-      locallyStoredInvoice &&
-        forEach(invoice, (value, key) => {
-          if (!value) {
-            invoice[key] = locallyStoredInvoice[key]
-          }
-        })
 
-      // Watch the invoice object for changes, updating hash params and localStorage as needed
+      let defaultInvoice = {
+        number: Math.floor(Math.random() * 1000000),
+        date: this.today,
+        issuer: 'Enter your company name, address and other details here.\nFeel free to add as many lines as needed.',
+        payer: 'Enter the name, address, etc. of the payer here.\nFeel free to add as many lines as needed.',
+        unit: 'pcs',
+        currency: 'USD',
+        items: [{
+          title: 'Enter the item title here',
+          quantity: 1,
+          price: 100
+        }],
+        paymentDetails: 'Enter the payment details here.\nFeel free to add as many lines as needed.'
+      }
+
+      forEach(this.invoice, (value, key) => {
+        if (!value) {
+          this.invoice[key] = locallyStoredInvoice?.[key] || defaultInvoice[key]
+        }
+      })
+
+      // Watch the invoice object for changes, updating query params and localStorage as needed
       this.$watch('invoice', invoice => {
 
-        this.$router.replace({ hash: JSON.stringify(invoice) })
+        this.$router.replace({ query: { invoice: JSON.stringify(invoice) } })
 
         localStorage.setItem('invoice', JSON.stringify(invoice))
 
@@ -234,9 +276,20 @@
 
     },
 
+    computed: {
+
+      today() {
+        return new Date().toLocaleDateString?.('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      },
+
+    },
+
     methods: {
-
-
+      
       focusOnNextTick(refName, select = true) {
         this.$nextTick(() => {
           let element = this.$refs[refName]
@@ -257,7 +310,6 @@
         // Focus and select on the last of 'title' elements on next tick
         this.focusOnNextTick('title')
       },
-
 
       total(key) {
         return sumBy(this.invoice.items, item => parseFloat(item[key]) || 0)
