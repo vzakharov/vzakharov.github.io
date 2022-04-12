@@ -66,7 +66,7 @@
           >
 
             <template #head(price)>
-              Price (<Editable type="number" v-model="invoice.currency" />)
+              Price (<Editable v-model="invoice.currency" />)
             </template>
 
             <template #head(quantity)>
