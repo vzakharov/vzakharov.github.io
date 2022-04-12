@@ -91,7 +91,7 @@
         <div class="text-end mt-5">
           <h6>Total: {{ total('price') }} {{ invoice.currency }}</h6>
           <h6>Discount: −<Editable v-model="invoice.discount" /> {{ invoice.currency }}</h6>
-          <h3>Grand total: {{ total('price') - invoice.discount }} {{ invoice.currency }}</h3>
+          <h3>Grand total: {{ total('price') - ( parseFloat(invoice.discount) || 0 ) }} {{ invoice.currency }}</h3>
         </div>
 
       </b-col>
