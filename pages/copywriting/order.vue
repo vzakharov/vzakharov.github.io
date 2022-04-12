@@ -334,7 +334,7 @@
 
       invoiceUrl() {
 
-        return '../invoice-generator?invoice=' + JSON.stringify({
+        return '/invoice-generator?invoice=' + JSON.stringify({
           items: this.cart.map(({ name, words, quantity }) => {
             return {
               title: name,
