@@ -157,11 +157,13 @@
 
       // Whatever invoice properties are still not set, take them from localStorage
       let locallyStoredInvoice = JSON.parse(localStorage.getItem('invoice'))
-      forEach(this.invoice, (value, key) => {
-        if (!value) {
-          this.invoice[key] = locallyStoredInvoice[key]
-        }
-      })
+      
+      locallyStoredInvoice &&
+        forEach(this.invoice, (value, key) => {
+          if (!value) {
+            this.invoice[key] = locallyStoredInvoice[key]
+          }
+        })
 
       // Watch the invoice object for changes, updating hash params and localStorage as needed
       this.$watch('invoice', invoice => {
