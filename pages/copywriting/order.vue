@@ -31,8 +31,8 @@
             <b-form-input
               v-model="item.words"
               type="number"
-              min="50"
-              step="50"
+              min="100"
+              step="100"
               @input="recountItem(item, { words:  $event })"
               style="width: 6em;"
             />
@@ -41,7 +41,7 @@
           <!-- Show price as dollars -->
           <template #cell(price)="{ item }">
             ${{ getItemPrice(item) }}
-            <span class="close float-end" @click="removeItem(item)"
+            <span class="close" @click="removeItem(item)"
               style="cursor: pointer;"
             >&times;</span>
           </template>
@@ -442,7 +442,7 @@
 
           // Send email to Vova via Bubble's sendEmailToVova post endpoint (body parameters are email, subject, and emailCopy)
           axios.post(process.env.bubbleApiUrl + 'sendEmailToVova', {
-            email: process.env.vovasEmail,
+            email,
             subject: `⚠️ ${title}`,
 
             // content plus comments plus url in the copy

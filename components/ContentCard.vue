@@ -46,14 +46,14 @@
           ref="customWordsInput"
           class="mb-2 d-inline w-75"
           type="number"
-          min="50"
-          step="50"
+          min="100"
+          step="100"
           :value="contentType.customWords"
           @change="$emit('update:customWords', parseInt($event))"
         />
 
         <!-- Close button to remove customWords -->
-        <span class="close" @click="$emit('update:customWords', null)"
+        <span class="close nofloat" @click="$emit('update:customWords', null)"
           style="cursor: pointer;"
         >&times;</span>
       </div>
