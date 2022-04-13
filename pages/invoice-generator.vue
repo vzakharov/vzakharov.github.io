@@ -17,23 +17,34 @@
         <template v-else>
           <div>
             <span class="h1">Invoice #<Editable v-model="invoice.number" /></span>
-            <!-- Randomize button -->
-            <span
-              class="text-muted small ms-2 noprint"
-              style="cursor: pointer;"
-              v-text="'<- Randomize'"
-              @click="invoice.number = Math.floor(Math.random() * 1000000)"
+            <!-- Generate number button -->
+            <b-button
+              class="text-muted noprint"
+              variant="light"
+              size="sm"
+              v-text="'Generate'"
+              @click="generateNumber"
+            />
+            <!-- Copy to clipboard button. If copied, replaced with 'Copied!' for a few seconds -->
+            <b-button
+              :disabled="numberCopied"
+              class="text-muted noprint"
+              variant="light"
+              size="sm"
+              v-text="numberCopied ? 'Copied!' : 'Copy number to clipboard'"
+              @click="copyToClipboard(invoice.number, 'numberCopied')"
             />
           </div>
 
           <!-- date -->
           dated <Editable v-model="invoice.date" />
           <!-- Set to today button, unless invoice is already dated today -->
-          <span
+          <b-button
             v-if="invoice.date != today"
-            class="text-muted small ms-2 noprint"
-            style="cursor: pointer;"
-            v-text="'<- Set to today'"
+            class="ms-2 text-muted noprint"
+            variant="light"
+            size="sm"
+            v-text="'Set to today'"
             @click="invoice.date = today"
           />
 
@@ -110,7 +121,7 @@
 
           <!-- Add item button, invisible on print -->
           <b-button
-            class="mb-3 noprint"
+            class="mb-3 text-muted noprint"
             variant="outline-secondary"
             size="sm"
             @click="addItem"
@@ -157,7 +168,7 @@
               <!-- Small 'Add [modifier]' button otherwise -->
               <b-button
                 v-else
-                class="noprint"
+                class="text-muted noprint"
                 variant="light"
                 size="sm"
                 @click="invoice[modifier] = 0; focusOnNextTick(modifier)"
@@ -205,7 +216,7 @@
 
 <script>
 
-  import { forEach, isArray, without, sumBy, upperFirst } from 'lodash'
+  import { forEach, filter, identity, isArray, without, sumBy, upperFirst } from 'lodash'
 
   export default {
 
@@ -230,7 +241,8 @@
 
       return { 
         invoice,
-        mounted: false
+        mounted: false,
+        numberCopied: false,
       }
     },
 
@@ -304,6 +316,14 @@
 
     methods: {
       
+      async copyToClipboard(text, justCopiedKey) {
+        await navigator.clipboard.writeText(text)
+        this[justCopiedKey] = true
+        setTimeout(() => {
+          this[justCopiedKey] = false
+        }, 1000)
+      },
+
       focusOnNextTick(refName, select = true) {
         this.$nextTick(() => {
           let element = this.$refs[refName]
@@ -327,6 +347,23 @@
 
       total(key) {
         return sumBy(this.invoice.items, item => parseFloat(item[key]) || 0)
+      },
+
+      generateNumber() {
+
+        let { payer, date } = this.invoice
+
+        // [first letter + max. 2 consonants of payer details in upper case, if it exists]-[date in yymmdd]
+
+        let payerPart = payer && (
+          ( payer[0] + payer.slice(1).replace(/[^bcdfghjklmnpqrstvwxyz]/gi, '').slice(0, 2) ).toUpperCase()
+        )
+
+        this.invoice.number = filter([
+          payerPart,
+          new Date(date+' UTC').toISOString().slice(2, 10).replace(/-/g, '')
+        ], identity).join('-')
+
       },
 
       without, sumBy, upperFirst
