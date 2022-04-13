@@ -4,7 +4,7 @@
     class="vh-100 d-flex align-items-center justify-content-center text-center"
   >
     <!-- Span right in the middle of the page, vertically and horizontally centered -->
-    <span v-if="id || url">
+    <span v-if="!mounted || id || url">
       <b-spinner
         variant="primary"
         class="ml-2"
@@ -17,7 +17,7 @@
       />
       <span 
         class="ml-2"
-        v-text="url ? 'Shortening your link' : 'Redirecting'"
+        v-text="url ? 'Shortening your link' : id ? 'Redirecting' : 'Loading' "
       />, please wait...
     </span>
     <template v-else>
@@ -56,7 +56,8 @@
       return {
         id, url,
         shortLink: null,
-        copied: false
+        copied: false,
+        mounted: false
       }
 
     },
@@ -77,6 +78,8 @@
         window.location = url
 
       }
+
+      this.mounted = true
 
     },
 
