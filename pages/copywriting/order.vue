@@ -260,8 +260,10 @@
 
   import axios from 'axios'
 
-  import copyPrice from '@/plugins/copyPrice'
-  import contentTypes from '@/plugins/contentTypes'
+  import copyPrice from '~/plugins/copyPrice'
+  import contentTypes from '~/plugins/contentTypes'
+
+  import Notion from '~/plugins/notion'
 
   export default {
 
@@ -428,50 +430,24 @@
           // title is email excluding @... / number of words
           let title = `${email.replace(/@.*/, '')} / ${totalWords} words`
 
-          // Send request to notion 
+          // Send request to Notion 
           let {
-            data: { url }
-          } = await axios.post(process.env.notionApiUrl + 'pages', {
+            url
+          } = await Notion.anon.createPage({
             parent: {
               database_id: process.env.ordersDatabaseId
             },
             properties: {
-              Name: {
-                title: [{
-                  text: {
-                    content: title
-                  }
-                }]
-              },
-              Words: {
-                number: totalWords
-              },
-              Price: {
-                number: totalPrice
-              },
-              Email: {
-                rich_text: [{
-                  text: {
-                    content: email
-                  }
-                }]
-              },
-              Comments: {
-                rich_text: [{
-                  text: {
-                    content: comments
-                  }
-                }]
-              },
-              Content: {
-                rich_text: [{
-                  text: {
-                    content: orderContent
-                  }
-                }]
-              }
+              name: title,
+              words: totalWords,
+              price: totalPrice,
+              email,
+              comments,
+              content: orderContent
             }
           })
+          
+
 
           // Send email to Vova via Bubble's sendEmailToVova post endpoint (body parameters are email, subject, and emailCopy)
           axios.post(process.env.bubbleApiUrl + 'sendEmailToVova', {
