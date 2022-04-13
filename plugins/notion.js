@@ -5,7 +5,7 @@ import axios from 'axios'
 
 // lodash
 import { 
-  chain, upperFirst 
+  chain, camelCase, upperFirst, keys
 } from 'lodash'
 
 function Notion(token) {
@@ -60,11 +60,49 @@ function Notion(token) {
           .value()
       })
 
+      denotionize(data)
+
       return data
+
+    },
+
+    // Get page
+    async getPage(id) {
+
+      let {
+        data
+      } = await api.get(`pages/${id}`)
+
+      denotionize(data)
 
     }
 
   })
+
+}
+
+function denotionize(data) {
+
+  data.properties = chain(data.properties)
+    .mapKeys( ( value, key ) => camelCase(key) )
+    .mapValues( ( object, key ) => {
+
+      const extract = object =>
+        object.type ?
+          extract(object[object.type]) :
+          object
+
+      let value = extract(object)
+      // console.log({ object, value })
+
+      if ( ['title', 'rich_text'].includes(object.type) ) {
+        value = value[0].plain_text
+      }
+
+      return value
+
+    } )
+    .value()
 
 }
 
