@@ -70,11 +70,11 @@
 
       } else if (id) {
 
-        this.url = (
+        let url = (
           await Notion.anon.getPage(id)
         ).properties.url
 
-        window.location = this.url
+        window.location = url
 
       }
 

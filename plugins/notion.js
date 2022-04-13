@@ -75,6 +75,8 @@ function Notion(token) {
 
       denotionize(data)
 
+      return data
+
     }
 
   })
