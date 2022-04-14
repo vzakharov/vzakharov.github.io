@@ -91,6 +91,20 @@ function Notion(token) {
         await api.get('users/me')
       ).data
 
+    },
+
+    // query a database
+    async queryDatabase(databaseId, query) {
+      return (
+        await api.post(`databases/${databaseId}/query`, query)
+      ).data.results.map( result => {
+        let { properties, ...details } = result
+        denotionize(result)
+        return {
+          ...result.properties,
+          details
+        }
+      })
     }
         
 
@@ -105,7 +119,7 @@ function denotionize(data) {
     .mapValues( ( object, key ) => {
 
       const extract = object =>
-        object.type ?
+        object?.type ?
           extract(object[object.type]) :
           object
 
@@ -113,7 +127,7 @@ function denotionize(data) {
       // console.log({ object, value })
 
       if ( ['title', 'rich_text'].includes(object.type) ) {
-        value = value[0].plain_text
+        value = value[0]?.plain_text
       }
 
       return value

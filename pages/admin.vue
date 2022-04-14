@@ -39,14 +39,12 @@
             size="sm"
             variant="outline-secondary"
           >
-            <b-icon
-              icon="times"
-              class="mr-1"
-            />
             Log out
           </b-button>
         </div>
-        <NuxtChild/>
+        <NuxtChild
+          v-bind="{ notion }"
+        />
       </template>
 
     </div>

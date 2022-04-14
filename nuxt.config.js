@@ -10,6 +10,7 @@ export default {
       'http://localhost:2479/api/notion/',
 
     ordersDatabaseId: '3df4dd3f18b3422887a63658bde65815',
+    NOTION_PROJECTS_DB_ID: '96c49f14abd94d679ab877b308e859b6' || process.env.NOTION_PROJECTS_DB_ID,
 
     bubbleApiUrl: process.env.BUBBLE_API_URL || 'https://b.ideality.app/api/1.1/wf/',
 
