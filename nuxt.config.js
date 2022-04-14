@@ -5,9 +5,9 @@ export default {
   env: {
     NOTION_API_URL: process.env.NOTION_API_URL || 
       // uncomment below for production
-      // 'https://ideality-stage.herokuapp.com/api/notion/',
+      'https://ideality-stage.herokuapp.com/api/notion/',
       // uncomment below for development
-      'http://localhost:2479/api/notion/',
+      // 'http://localhost:2479/api/notion/',
 
     ordersDatabaseId: '3df4dd3f18b3422887a63658bde65815',
     NOTION_PROJECTS_DB_ID: '96c49f14abd94d679ab877b308e859b6' || process.env.NOTION_PROJECTS_DB_ID,
