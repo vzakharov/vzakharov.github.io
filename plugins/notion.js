@@ -55,7 +55,7 @@ function Notion(token) {
           .mapKeys(( value, key ) =>
             // Upper first + space between every lower and upper letter
             upperFirst(key)
-            .replace(/(?<=[a-z])(?=[A-Z])/g, ' ')
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
           )
           .value()
       })
