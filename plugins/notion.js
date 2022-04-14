@@ -77,7 +77,22 @@ function Notion(token) {
 
       return data
 
+    },
+
+    // Get token owner info
+    async getUser() {
+
+      // If no token, throw error
+      if ( !token ) {
+        throw new Error('No token provided. Please use an instance of Notion with a token.')
+      }
+
+      return (
+        await api.get('users/me')
+      ).data
+
     }
+        
 
   })
 
