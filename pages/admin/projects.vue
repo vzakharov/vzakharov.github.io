@@ -4,15 +4,20 @@
     <h1>Projects</h1>
     <b-spinner v-if="!projects" />
     <template v-else>
-      <!-- Show/hide chart button, navigates to 'chart/ page -->
+      <!-- Show/hide chart button, navigates to '?chart' -->
       <b-button
         v-if="projects.length > 0"
         size="sm mb-2"
-        :to="{ ...$route, name: $route.name === 'admin-projects-chart' ? 'admin-projects' : 'admin-projects-chart' }"
-        v-text="$route.name === 'admin-projects-chart' ? 'Hide chart' : 'Show chart'"
-        :variant="$route.name === 'admin-projects-chart' ? 'secondary' : 'outline-secondary'"
+        v-text="showChart ? 'Hide chart' : 'Show chart'"
+        :variant="showChart ? 'outline-primary' : 'outline-secondary'"
+        :to="{ ...$route, query: { ...$route.query, chart: showChart ? undefined : null } }"
       />
-      <NuxtChild v-if="projects" v-bind="{ projects }" />
+      <b-toast
+        v-model="showChart"
+        no-auto-hide
+      >
+        <Chart v-bind="{ projects }" />
+      </b-toast>
       <b-table
         :items="projects"
         striped small no-border-collapse bordered outlined
@@ -138,7 +143,7 @@
 
 <script>
 
-  import { chain, countBy, filter, forEach, identity, pickBy, sumBy } from 'lodash'
+  import { chain, countBy, filter, forEach, identity, pick, pickBy, sumBy } from 'lodash'
 
   export default {
 
@@ -177,6 +182,23 @@
           return true
         })
 
+      },
+
+      showChart: {
+        get() {
+          return typeof this.$route.query.chart !== 'undefined'
+        },
+
+        set(value) {
+          console.log(value)
+          this.$router.push({
+            ...this.$route,
+            query: {
+              ...this.$route.query,
+              chart: value ? null : undefined
+            }
+          })
+        }
       }
 
 
@@ -189,9 +211,12 @@
         handler(filters) {
 
           // Update route only if it is not already same as filters
-          if ( JSON.stringify(filters) !== JSON.stringify(this.$route.query) ) {
+          if ( JSON.stringify(filters) !== JSON.stringify(pick(this.$route.query, ['status', 'type'])) ) {
             this.$router.push({
-              query: pickBy(filters, identity)
+              query: {
+                ...this.$route.query,
+                ...pickBy(filters, identity)
+              }
             })
           }
 
@@ -206,9 +231,8 @@
           this.filters = {
             status: null,
             type: null,
-            ...query
+            ...pick(query, ['status', 'type'])
           }
-          console.log(JSON.stringify(this.filters))
 
         },
         deep: true,
