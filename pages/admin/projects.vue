@@ -3,126 +3,136 @@
   <div>
     <h1>Projects</h1>
     <b-spinner v-if="!projects" />
-    <b-table
-      v-else
-      :items="projects"
-      striped small no-border-collapse bordered outlined
-      foot-clone
-      :fields="[
-        'name', 
-        {
-          key: 'status.name',
-          label: 'Status'
-        },
-        {
-          key: 'type.name',
-          label: 'Type'
-        }, 
-        'words', 'usdEq', 'hoursNet', 'wordsPerHourNet', 'usdPerHourNet'
-      ]"
-    >
+    <template v-else>
+      <!-- Show/hide chart button, navigates to 'chart/ page -->
+      <b-button
+        v-if="projects.length > 0"
+        size="sm mb-2"
+        :to="{ ...$route, name: $route.name === 'admin-projects-chart' ? 'admin-projects' : 'admin-projects-chart' }"
+        v-text="$route.name === 'admin-projects-chart' ? 'Hide chart' : 'Show chart'"
+        :variant="$route.name === 'admin-projects-chart' ? 'secondary' : 'outline-secondary'"
+      />
+      <NuxtChild v-if="projects" v-bind="{ projects }" />
+      <b-table
+        :items="projects"
+        striped small no-border-collapse bordered outlined
+        foot-clone
+        :fields="[
+          'name', 
+          {
+            key: 'status.name',
+            label: 'Status'
+          },
+          {
+            key: 'type.name',
+            label: 'Type'
+          }, 
+          'words', 'usdEq', 'hoursNet', 'wordsPerHourNet', 'usdPerHourNet'
+        ]"
+      >
 
-      <template #cell(name)="{ item }">
-        <a 
-          :href="item.details.url"
-          style="text-decoration: none;"
-          target="_blank"
-        >
-          {{ item.name }}
-        </a>
-      </template>
+        <template #cell(name)="{ item }">
+          <a 
+            :href="item.details.url"
+            style="text-decoration: none;"
+            target="_blank"
+          >
+            {{ item.name }}
+          </a>
+        </template>
 
-      <template #[`cell(status.name)`]="{ item }">
-        <span v-if="item.status"
-          :style="{
-            backgroundColor: hex(item.status.color)
-          }"
-          v-text="item.status.name"
-        />
-      </template>
+        <template #[`cell(status.name)`]="{ item }">
+          <span v-if="item.status"
+            :style="{
+              backgroundColor: hex(item.status.color)
+            }"
+            v-text="item.status.name"
+          />
+        </template>
 
-      <template #[`cell(type.name)`]="{ item }">
-        <span v-if="item.type"
-          :style="{
-            backgroundColor: hex(item.type.color)
-          }"
-          v-text="item.type.name"
-        />
-      </template>
+        <template #[`cell(type.name)`]="{ item }">
+          <span v-if="item.type"
+            :style="{
+              backgroundColor: hex(item.type.color)
+            }"
+            v-text="item.type.name"
+          />
+        </template>
 
-      <template #[`head(status.name)`]>
-        <!-- Dropdown to filter by status -->
-        <b-select
-          v-model="filters.status"
-          size="sm"
-          class="mr-2"
-          :options="[{ value: null, text: filters.status ? 'All' : 'Status' },
-            ...chain(allProjects).map('status.name').uniq().filter(identity).value()
-          ]"
-        />
-      </template>
+        <template #[`head(status.name)`]>
+          <!-- Dropdown to filter by status -->
+          <b-select
+            v-model="filters.status"
+            size="sm"
+            class="mr-2"
+            :options="[{ value: null, text: filters.status ? 'All' : 'Status' },
+              ...chain(allProjects).map('status.name').uniq().filter(identity).value()
+            ]"
+          />
+        </template>
 
-      <template #[`head(type.name)`]>
-        <!-- Dropdown to filter by type -->
-        <b-select
-          v-model="filters.type"
-          size="sm"
-          class="mr-2"
-          :options="[{ value: null, text: filters.type ? 'All' : 'Type' },
-            ...chain(allProjects).map('type.name').uniq().filter(identity).value()
-          ]"
-        />
-      </template>
+        <template #[`head(type.name)`]>
+          <!-- Dropdown to filter by type -->
+          <b-select
+            v-model="filters.type"
+            size="sm"
+            class="mr-2"
+            :options="[{ value: null, text: filters.type ? 'All' : 'Type' },
+              ...chain(allProjects).map('type.name').uniq().filter(identity).value()
+            ]"
+          />
+        </template>
 
 
-      <template #foot(name)>
-        <!-- item quantity -->
-        <span v-text="`Total: ${projects.length} items`" />
-      </template>
+        <template #foot(name)>
+          <!-- item quantity -->
+          <span v-text="`Total: ${projects.length} items`" />
+        </template>
 
-      <template #[`foot(status.name)`]>
-        <!-- breakdown by status -->
-        <span
-          v-for="( count, status ) in countBy(projects, 'status.name')"
-          :key="status"
-          class="fw-normal"
-        >
-          {{ status[0] }}:{{ count }}
-        </span>
-      </template>
+        <template #[`foot(status.name)`]>
+          <!-- breakdown by status -->
+          <span
+            v-for="( count, status ) in countBy(projects, 'status.name')"
+            :key="status"
+            class="fw-normal"
+          >
+            {{ status[0] }}:{{ count }}
+          </span>
+        </template>
 
-      <template #[`foot(type.name)`]>
-        <!-- breakdown by type -->
-        <span
-          v-for="( count, type ) in countBy(projects, 'type.name')"
-          :key="type"
-          class="fw-normal"
-        >
-          {{ type[0] }}:{{ count }}
-        </span>
-      </template>
+        <template #[`foot(type.name)`]>
+          <!-- breakdown by type -->
+          <span
+            v-for="( count, type ) in countBy(projects, 'type.name')"
+            :key="type"
+            class="fw-normal"
+          >
+            {{ type[0] }}:{{ count }}
+          </span>
+        </template>
 
-      <template #foot(words)>
-        {{ sumBy(projects, 'words').toLocaleString() }} words
-      </template>
+        <template #foot(words)>
+          {{ sumBy(projects, 'words').toLocaleString() }} words
+        </template>
 
-      <template #foot(usdEq)>
-        {{ sumBy(projects, 'usdEq').toLocaleString() }} USD
-      </template>
+        <template #foot(usdEq)>
+          {{ sumBy(projects, 'usdEq').toLocaleString() }} USD
+        </template>
 
-      <template #foot(hoursNet)>
-        {{ sumBy(projects, 'hoursNet').toLocaleString() }} hours
-      </template>
+        <template #foot(hoursNet)>
+          {{ sumBy(projects, 'hoursNet').toLocaleString() }} hours
+        </template>
 
-      <template #foot(wordsPerHourNet)>
-        ~{{ Math.round( sumBy(projects, 'words') / sumBy(projects, 'hoursNet') / 10 ) * 10 }} words/hour
-      </template>
+        <template #foot(wordsPerHourNet)>
+          ~{{ Math.round( sumBy(projects, 'words') / sumBy(projects, 'hoursNet') / 10 ) * 10 }} words/hour
+        </template>
 
-      <template #foot(usdPerHourNet)>
-        ~{{ Math.round( sumBy(projects, 'usdEq') / sumBy(projects, 'hoursNet') / 10 ) * 10 }} USD/hour
-      </template>
+        <template #foot(usdPerHourNet)>
+          ~{{ Math.round( sumBy(projects, 'usdEq') / sumBy(projects, 'hoursNet') / 10 ) * 10 }} USD/hour
+        </template>
 
-    </b-table>
+      </b-table>
+    </template>
   </div>
 </template>
 
