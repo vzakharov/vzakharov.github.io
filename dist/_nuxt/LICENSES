@@ -12,14 +12,6 @@
 
 
 /*!
- * Chart.js v3.7.1
- * https://www.chartjs.org
- * (c) 2022 Chart.js Contributors
- * Released under the MIT License
- */
-
-
-/*!
  * BootstrapVue Icons, generated from Bootstrap Icons 1.2.2
  *
  * @link https://icons.getbootstrap.com/
@@ -80,6 +72,14 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ */
+
+
+/*!
+ * Chart.js v3.7.1
+ * https://www.chartjs.org
+ * (c) 2022 Chart.js Contributors
+ * Released under the MIT License
  */
 
 
