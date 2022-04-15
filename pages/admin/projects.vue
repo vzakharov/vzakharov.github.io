@@ -143,7 +143,7 @@
 
 <script>
 
-  import { chain, countBy, filter, forEach, identity, pick, pickBy, sumBy } from 'lodash'
+  import { chain, countBy, filter, forEach, identity, mapValues, pick, pickBy, sumBy } from 'lodash'
 
   export default {
 
@@ -211,11 +211,12 @@
         handler(filters) {
 
           // Update route only if it is not already same as filters
-          if ( JSON.stringify(filters) !== JSON.stringify(pick(this.$route.query, ['status', 'type'])) ) {
+          if ( JSON.stringify(pickBy(filters, identity)) !== JSON.stringify(pick(this.$route.query, ['status', 'type'])) ) {
             this.$router.push({
               query: {
                 ...this.$route.query,
-                ...pickBy(filters, identity)
+                // replace nulls with undefined in filters
+                ...mapValues(this.filters, value => value ? value : undefined)
               }
             })
           }
@@ -231,7 +232,7 @@
           this.filters = {
             status: null,
             type: null,
-            ...pick(query, ['status', 'type'])
+            ...pickBy(pick(query, ['status', 'type']), identity)
           }
 
         },
