@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/notion", {data:[{}],fetch:{},mutations:void 0});

@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/copywriting", {data:[{}],fetch:{},mutations:void 0});
