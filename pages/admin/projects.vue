@@ -161,7 +161,7 @@
                 <span
                   v-for="( count, status ) in countBy(projects, 'status.name')"
                   :key="status"
-                  class="fw-normal"
+                  class="fw-normal small"
                 >
                   {{ status[0] }}:{{ count }}
                 </span>
@@ -172,9 +172,20 @@
                 <span
                   v-for="( count, type ) in countBy(projects, 'type.name')"
                   :key="type"
-                  class="fw-normal"
+                  class="fw-normal small"
                 >
                   {{ type[0] }}:{{ count }}
+                </span>
+              </template>
+
+              <template #foot(customer)>
+                <!-- breakdown by customer -->
+                <span
+                  v-for="( count, customer ) in countBy(projects, projectCustomerName)"
+                  :key="customer"
+                  class="fw-normal small"
+                >
+                  {{ customerShortNames[customer] }}:{{ count }}
                 </span>
               </template>
 
@@ -195,15 +206,15 @@
               </template>
 
               <template #foot(wordsPerHourNet)>
-                ~{{ Math.round( sumBy(filledProjects, 'words') / sumBy(projects, 'hoursNet') / 10 ) * 10 }} words/hour
+                ~{{ Math.round( sumBy(projectsWith('words', 'hours'), 'words') / sumBy(projectsWith('words', 'hours'), 'hoursNet') / 10 ) * 10 }} words/hour
               </template>
 
               <template #foot(usdPerHourNet)>
-                ~{{ Math.round( sumBy(filledProjects, 'usdEq') / sumBy(projects, 'hoursNet') / 10 ) * 10 }} USD/hour
+                ~{{ Math.round( sumBy(projectsWith('usdEq', 'hours'), 'usdEq') / sumBy(projectsWith('usdEq', 'hours'), 'hoursNet') / 10 ) * 10 }} USD/hour
               </template>
 
               <template #foot(rubPerHourNet)>
-                ~{{ Math.round( sumBy(filledProjects, 'rubEq') / sumBy(projects, 'hoursNet') / 10 ) * 10 }} RUB/hour
+                ~{{ Math.round( sumBy(projectsWith('rubEq', 'hours'), 'rubEq') / sumBy(projectsWith('rubEq', 'hours'), 'hoursNet') / 10 ) * 10 }} RUB/hour
               </template>
 
             </b-table>
@@ -216,7 +227,7 @@
 
 <script>
 
-  import { chain, countBy, filter, find, forEach, identity, map, mapValues, pick, pickBy, sumBy, sortBy } from 'lodash'
+  import { chain, countBy, filter, find, forEach, identity, map, mapValues, pick, pickBy, sumBy, sortBy, without } from 'lodash'
 
   export default {
 
@@ -271,11 +282,23 @@
 
       },
 
-      filledProjects() {
-        // Projects with monetary, word, and hours data filled in
-        return filter( this.projects, project => 
-          ['usdEq', 'words', 'hoursNet'].every( key => project[key] )
-        )
+      customerShortNames() {
+        // Maps every customer to a short name, which means the shortest possible starting substring of the name that uniquely identifies the customer among all customers.
+        let customerNames = map(this.customers, 'name')
+        let mapping = {}
+        for ( let customer of this.customers ) {
+          // Starting with 1 character, see if there are other customers starting with the same substring. If yes, increase the length of the substring by 1. If not, return the substring.
+          mapping[customer.name] = customer.name
+          for ( let i = 1; i < customer.name.length; i++ ) {
+            let shortName = customer.name.substring(0, i)
+            if ( !find(without(customerNames, customer.name), name => name.startsWith(shortName)) ) {
+              mapping[customer.name] = shortName
+              break
+            }
+          }
+        }
+        return mapping
+
       },
 
       showChart: {
@@ -355,6 +378,12 @@
 
       format(number) {
         return number?.toLocaleString() || 'n/a'
+      },
+
+      projectsWith(...fields) {
+        let projectsWithFields = this.projects.filter(project => fields.some(field => project[field]))
+        // console.log(`Projects with ${fields.join(', ')}`, projectsWithFields)
+        return projectsWithFields
       },
 
       projectCustomerName(project) {

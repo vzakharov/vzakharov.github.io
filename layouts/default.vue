@@ -2,6 +2,23 @@
   <Nuxt/>
 </template>
 
+<script>
+
+  export default {
+
+    mounted() {
+
+      // Scan for the first h element and set the page title to "[h content] · Vova’ place". If none found, just set to "Vova’ place"
+      let title = document.querySelector('h1, h2, h3, h4, h5, h6')?.innerText
+      document.title = ( title ? title + ' · ' : '' ) + 'Vova’ place'
+
+    }
+
+  }
+
+</script>
+
+
 <style>
 
   .close {
