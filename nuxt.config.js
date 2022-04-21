@@ -1,6 +1,7 @@
 export default {
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
+  ssr: false,
 
   env: {
     NOTION_API_URL: process.env.NOTION_API_URL || 
