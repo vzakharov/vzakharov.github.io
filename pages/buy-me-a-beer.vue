@@ -71,36 +71,8 @@
 
       return {
         paymentLink: null,
-        amountChangedTimeout: null
-      }
-
-    },
-
-    mounted() {
-
-      if ( !this.amount ) {
-        this.amount = 5
-      }
-
-    },
-
-    computed: {
-
-      amount: {
-        get() {
-          // take from query or default to 5
-          return this.$route.query.amount
-        },
-        set(amount) {
-          // update route
-          this.$router.push({
-            ...this.$route,
-            query: {
-              ...this.$route.query,
-              amount
-            }
-          })
-        }
+        amountChangedTimeout: null,
+        amount: this.$route.query.amount || 5
       }
 
     },
