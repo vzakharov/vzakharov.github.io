@@ -3,7 +3,7 @@
 function copyPrice(words, currentTotalWords = 0) {
 
   if ( !currentTotalWords ) {
-    let [ eph, a, b, k, x ] = [ 150, 1300, 250, 1900, words ]
+    let [ eph, a, b, k, x ] = [ 170, 1300, 250, 1900, words ]
     let wph = (a*x + b*k)/(x+k)
     // console.log({wph})
     let epw = eph/wph
