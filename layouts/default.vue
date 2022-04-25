@@ -47,4 +47,20 @@
     color: #0070f3;
   }
 
+  /* stick to the top */
+  .sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #fff;
+  }
+
+  /* stick to the bottom */
+  .sticky-bottom {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background-color: #fff;
+  }
+
 </style>

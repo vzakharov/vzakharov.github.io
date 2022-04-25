@@ -119,7 +119,7 @@
       },
 
       discountedPrice() {
-        return this.getPrice(this.words, this.totalWords)
+        return this.getPrice(this.words, { currentTotalWords: this.totalWords })
       },
 
 

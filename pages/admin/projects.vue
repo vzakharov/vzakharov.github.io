@@ -33,16 +33,24 @@
         "
       />
       
-      <b-container fluid>
-        <b-row>
-          <!-- Sidebar for chart, not too narrow --> 
-          <b-col cols="12" md="5" lg="4" v-if="showChart">
+      <b-container 
+        fluid
+      >
+        <b-row
+          id="container"
+        >
+          <!-- Sidebar for chart, not too narrow; overflows individually -->
+          <b-col
+            cols="12" md="5" lg="4" v-if="showChart"
+          >
             <Chart v-bind="{ projects }" />
           </b-col>
           <!-- Main content -->
-          <b-col v-bind="{
-            ...showChart ? { cols: 12, md: 7, lg: 8 } : {}
-          }">
+          <b-col 
+            v-bind="{
+              ...showChart ? { cols: 12, md: 7, lg: 8 } : {}
+            }"
+          >
             <b-table
               :items="projects"
               striped small no-border-collapse bordered outlined
@@ -293,7 +301,7 @@
           month: null
         },
         currency: 'USD',
-        window: null
+        window: null,
       }
     },
 

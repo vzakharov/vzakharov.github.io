@@ -7,22 +7,23 @@
 // eph - target earnings per hour
 // epw - target earnings per word
 
-function getWph(words) {
-  let {
-    wphMax, wphMin, midpoint
-  } = this.$store.state
+function getWph(words, { wphMin, wphMax, midpoint } = this.$store.state) {
+  console.log(...arguments)
   return ( wphMax * words + wphMin * midpoint ) / ( words + midpoint )
 }
 
-function getPrice(words, currentTotalWords = 0) {
+function getPrice(words, { currentTotalWords = 0, ...params } = {} ) {
+  console.log(...arguments)
   if ( !currentTotalWords ) {
-    let
-      eph = 170
 
-    let wph = this.getWph(words)
-    // console.log({wph})
-    let epw = eph/wph
-    // console.log({epw})
+    let { wphMin, wphMax, midpoint, hourlyRate } = {
+      ...this.$store.state, ...params
+    }
+
+    let wph = this.getWph(words, { wphMin, wphMax, midpoint })
+    console.log({wph})
+    let epw = hourlyRate/wph
+    console.log({epw})
     
     // Total price is epw * total words, rounded up to the nearest 20 dollars, minus 1
     let price = epw * words
