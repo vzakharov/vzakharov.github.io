@@ -37,6 +37,14 @@
               label-sort-desc=""
               label-sort-clear=""
               :fields="[
+                { 
+                  key: 'month',
+                  sortable: true,
+                },
+                { 
+                  key: 'week',
+                  sortable: true,
+                },
                 {
                   key: 'name', 
                   sortable: true,
@@ -150,6 +158,30 @@
                   ]"
                 />
               </template>
+              
+              <template #head(week)>
+                <!-- Dropdown to filter by week -->
+                <b-select
+                  v-model="filters.week"
+                  size="sm"
+                  class="mr-2"
+                  :options="[{ value: null, text: filters.week ? 'All' : 'Week' },
+                    ...chain(allProjects).map('week').uniq().filter(identity).value()
+                  ]"
+                />
+              </template>
+
+              <template #head(month)>
+                <!-- Dropdown to filter by month -->
+                <b-select
+                  v-model="filters.month"
+                  size="sm"
+                  class="mr-2"
+                  :options="[{ value: null, text: filters.month ? 'All' : 'Month' },
+                    ...chain(allProjects).map('month').uniq().filter(identity).value()
+                  ]"
+                />
+              </template>
 
               <template #foot(name)>
                 <!-- item quantity -->
@@ -240,7 +272,9 @@
         filters: {
           customer: null,
           status: null,
-          type: null
+          type: null,
+          week: null,
+          month: null
         },
         currency: 'USD',
       }
@@ -268,16 +302,26 @@
         let { allProjects, filters: { status, type }, filters } = this
 
         return filter( allProjects, project => {
+
+          const value = (project, key) => {
+            switch ( key ) {
+              case 'customer':
+                return this.projectCustomerName(project)
+              case 'status':
+              case 'type':
+                return project[key].name
+              default:
+                return project[key]
+            }
+          }
+
           for ( let key in filters ) {
-            if ( key == 'customer') {
-              if ( filters[key] && this.projectCustomerName(project) != filters[key] ) {
-                return false
-              }
-            } else if ( filters[key] && project[key]?.name !== filters[key] ) {
+            if ( filters[key] && value(project, key) !== filters[key] ) {
               return false
             }
           }
           return true
+
         })
 
       },
@@ -328,7 +372,7 @@
         handler(filters) {
 
           // Update route only if it is not already same as filters
-          if ( JSON.stringify(pickBy(filters, identity)) !== JSON.stringify(pick(this.$route.query, ['status', 'type', 'customer'])) ) {
+          if ( JSON.stringify(pickBy(filters, identity)) !== JSON.stringify(pick(this.$route.query, ['status', 'type', 'customer', 'week', 'month'])) ) {
             this.$router.push({
               query: {
                 ...this.$route.query,
@@ -350,7 +394,14 @@
             status: null,
             type: null,
             customer: null,
-            ...pickBy(pick(query, ['status', 'type', 'customer']), identity)
+            week: null,
+            month: null,
+            ...mapValues(
+              pickBy(pick(query, ['status', 'type', 'customer', 'week', 'month']), identity),
+              // Convert to number for weeks
+              ( value, key ) =>
+                [ 'week', 'month' ].includes(key) ? Number(value) : value
+            )            
           }
 
         },
