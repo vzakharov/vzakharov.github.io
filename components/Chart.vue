@@ -176,7 +176,7 @@
             // Make a random change to wphMin, wphMax, and midpoint in steps of 10% of current value. If the resulting standard deviation is less than the current standard deviation, then accept the change. Otherwise, revert it.
             let currentStdDev = this.stdDevHours
             ;['wphMin', 'wphMax', 'midpoint'].forEach(parameter => {
-              console.log(parameter)
+              // console.log(parameter)
               let value = this.$store.state[parameter]
               this.$store.commit('set', {
                 [parameter]: Math.round(
