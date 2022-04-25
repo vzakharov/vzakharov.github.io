@@ -2,9 +2,9 @@
 
 export const state = () => ({
 
-  wphMin: 390,
-  wphMax: 620,
-  midpoint: 720
+  wphMin: 340,
+  wphMax: 610,
+  midpoint: 440
 
 })
 

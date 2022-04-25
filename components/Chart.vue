@@ -25,28 +25,35 @@
     </div>
     <!-- Inputs to set wphMin, wphMax, and midpoint in nuxt $store -->
     <div class="mt-2">
-      <b-form-input
+      <div
         v-for="parameter in ['wphMin', 'wphMax', 'midpoint']"
         :key="parameter"
-        class="mb-2"
-        type="number"
-        step="10"
-        :placeholder="{
-          wphMin: 'Minimum WPH',
-          wphMax: 'Maximum WPH',
-          midpoint: 'Midpoint',
-        }[parameter]"
-        :value="$store.state[parameter]"
-        @input="$store.commit('set', {
-          [parameter]: parseFloat($event),
-        })"
-      />
+      >
+        <label
+          :for="parameter"
+          class="mt-2 fw-bold"
+          v-text="{
+            wphMin: 'Minimum words per hour',
+            wphMax: 'Maximum words per hour',
+            midpoint: 'Midpoint',
+          }[parameter]"
+        />
+        <b-form-input
+          :id="parameter"
+          type="number"
+          step="10"
+          :value="$store.state[parameter]"
+          @input="$store.commit('set', {
+            [parameter]: parseFloat($event),
+          })"
+        />
+      </div>
     </div>
     <!-- Button to fit the parameters to the data -->
     <div class="mt-2">
       <b-button
-        variant="outline-secondary"
-        v-text="fitting ? 'Fitting; click to cancel' : 'Fit to data'"
+        v-text="fitting ? 'Stop fitting' : 'Fit to data'"
+        :variant="fitting ? 'outline-danger' : 'outline-secondary'"
         @click="toggleFitting"
       />
     </div>
@@ -166,13 +173,15 @@
         } else {
 
           this.fitting = setInterval(() => {
-            // Make a random change to wphMin, wphMax, and midpoint in steps of 10. If the resulting standard deviation is less than the current standard deviation, then accept the change. Otherwise, revert it.
+            // Make a random change to wphMin, wphMax, and midpoint in steps of 10% of current value. If the resulting standard deviation is less than the current standard deviation, then accept the change. Otherwise, revert it.
             let currentStdDev = this.stdDevHours
             ;['wphMin', 'wphMax', 'midpoint'].forEach(parameter => {
               console.log(parameter)
               let value = this.$store.state[parameter]
               this.$store.commit('set', {
-                [parameter]: value + (Math.random() < 0.5 ? -10 : 10),
+                [parameter]: Math.round(
+                  value + ( Math.random() - 0.5 ) * 0.1 * value
+                )
               })
               if ( this.stdDevHours > currentStdDev ) {
                 this.$store.commit('set', {
