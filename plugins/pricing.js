@@ -31,7 +31,7 @@ function getPrice(words, currentTotalWords = 0) {
     
     return price  
   } else {
-    return getPrice(words + currentTotalWords) - getPrice(currentTotalWords)
+    return this.getPrice(words + currentTotalWords) - this.getPrice(currentTotalWords)
   }
 
 }
