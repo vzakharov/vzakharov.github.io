@@ -2,7 +2,7 @@
 <template>
   <div>
     <h1>Projects</h1>
-    <b-spinner v-if="!projects" />
+    <b-spinner v-if="!allProjects" />
     <template v-else>
       <!-- Show/hide chart button, navigates to '?chart' -->
       <b-button
@@ -206,15 +206,15 @@
               </template>
 
               <template #foot(wordsPerHourNet)>
-                ~{{ Math.round( sumBy(projectsWith('words', 'hours'), 'words') / sumBy(projectsWith('words', 'hours'), 'hoursNet') / 10 ) * 10 }} words/hour
+                ~{{ Math.round( sumBy(projectsWith('words', 'hoursNet'), 'words') / sumBy(projectsWith('words', 'hoursNet'), 'hoursNet') / 10 ) * 10 }} words/hour
               </template>
 
               <template #foot(usdPerHourNet)>
-                ~{{ Math.round( sumBy(projectsWith('usdEq', 'hours'), 'usdEq') / sumBy(projectsWith('usdEq', 'hours'), 'hoursNet') / 10 ) * 10 }} USD/hour
+                ~{{ Math.round( sumBy(projectsWith('usdEq', 'hoursNet'), 'usdEq') / sumBy(projectsWith('usdEq', 'hoursNet'), 'hoursNet') / 10 ) * 10 }} USD/hour
               </template>
 
               <template #foot(rubPerHourNet)>
-                ~{{ Math.round( sumBy(projectsWith('rubEq', 'hours'), 'rubEq') / sumBy(projectsWith('rubEq', 'hours'), 'hoursNet') / 10 ) * 10 }} RUB/hour
+                ~{{ Math.round( sumBy(projectsWith('rubEq', 'hoursNet'), 'rubEq') / sumBy(projectsWith('rubEq', 'hoursNet'), 'hoursNet') / 10 ) * 10 }} RUB/hour
               </template>
 
             </b-table>
@@ -381,7 +381,7 @@
       },
 
       projectsWith(...fields) {
-        let projectsWithFields = this.projects.filter(project => fields.some(field => project[field]))
+        let projectsWithFields = this.projects.filter(project => fields.every(field => project[field]))
         // console.log(`Projects with ${fields.join(', ')}`, projectsWithFields)
         return projectsWithFields
       },
