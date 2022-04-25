@@ -18,6 +18,20 @@
         variant="outline-secondary"
         @click="currency = currency === 'RUB' ? 'USD' : 'RUB'"
       />
+      <!-- Copy as TSV button -->
+      <b-button
+        ref="tsvButton"
+        size="sm mb-2"
+        v-text="`Copy as TSV`"
+        variant="outline-secondary"
+        @click="
+          copyAsTSV()
+          $refs.tsvButton.innerText = 'Copied!'
+          window.setTimeout(() => {
+            $refs.tsvButton.innerText = 'Copy as TSV'
+          }, 1000)
+        "
+      />
       
       <b-container fluid>
         <b-row>
@@ -259,7 +273,9 @@
 
 <script>
 
-  import { chain, countBy, filter, find, forEach, identity, map, mapValues, pick, pickBy, sumBy, sortBy, without } from 'lodash'
+  import { 
+    chain, countBy, filter, find, forEach, identity, keys, map, mapValues, pick, pickBy, sumBy, sortBy, uniq, without 
+  } from 'lodash'
 
   export default {
 
@@ -277,6 +293,7 @@
           month: null
         },
         currency: 'USD',
+        window: null
       }
     },
 
@@ -293,6 +310,8 @@
       // Sort customers by name
       this.customers = sortBy(this.customers, customer => customer.name.toLowerCase())
 
+      this.window = window
+
     },
 
     computed: {
@@ -303,20 +322,8 @@
 
         return filter( allProjects, project => {
 
-          const value = (project, key) => {
-            switch ( key ) {
-              case 'customer':
-                return this.projectCustomerName(project)
-              case 'status':
-              case 'type':
-                return project[key].name
-              default:
-                return project[key]
-            }
-          }
-
           for ( let key in filters ) {
-            if ( filters[key] && value(project, key) !== filters[key] ) {
+            if ( filters[key] && this.getDisplayValue(project, key) !== filters[key] ) {
               return false
             }
           }
@@ -361,7 +368,6 @@
           })
         }
       }
-
 
     },
 
@@ -431,6 +437,19 @@
         return number?.toLocaleString() || 'n/a'
       },
 
+      getDisplayValue(project, key) {
+        switch ( key ) {
+          case 'customer':
+            return this.projectCustomerName(project)
+          case 'status':
+          case 'type':
+            return project[key]?.name
+          default:
+            return project[key]
+        }
+      },
+
+
       projectsWith(...fields) {
         let projectsWithFields = this.projects.filter(project => fields.every(field => project[field]))
         // console.log(`Projects with ${fields.join(', ')}`, projectsWithFields)
@@ -441,6 +460,37 @@
         let id = project.customer[0]?.id
         return find(this.customers, { details: { id }})?.name
       },
+
+      copyAsTSV() {
+        let 
+          { projects } = this,
+          headers = [
+            'name', 'words', 'wordsPerHourNet', 
+            // The rest of the headers are calculated from the projects
+          ],
+          data = []
+
+        for ( let project of projects ) {
+          // Add keys to headers (if not there yet)
+          headers = uniq([ ...headers, ...keys(project) ])
+          // Add values to data
+          let rowData = []
+          for ( let key of headers )
+            rowData.push(this.getDisplayValue(project, key))
+          data.push(rowData)
+        }
+
+        // Add headers in first row
+        data.unshift(headers)
+
+        // Convert to TSV
+        let tsv = data.map(row => row.join('\t')).join('\n')
+
+        // Copy to clipboard
+        navigator.clipboard.writeText(tsv)
+       
+      },
+
 
       sumBy, countBy, chain, identity, find, map
 
