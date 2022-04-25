@@ -19,7 +19,7 @@
         @click="currency = currency === 'RUB' ? 'USD' : 'RUB'"
       />
       
-      <b-container>
+      <b-container fluid>
         <b-row>
           <!-- Sidebar for chart, not too narrow --> 
           <b-col cols="12" md="5" lg="4" v-if="showChart">

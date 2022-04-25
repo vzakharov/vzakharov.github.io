@@ -38,8 +38,8 @@
                 },
               ]
             },
-            // x and y axis min to 0
             options: {
+              // x and y axis min to 0
               scales: {
                 x: {
                   min: 0,
@@ -50,6 +50,10 @@
                   max: 1500,
                 },
               },
+              // Disable animation
+              animation: {
+                duration: 0,
+              }
             },
           }
         },
