@@ -6,7 +6,7 @@ export default {
   env: {
     NOTION_API_URL: process.env.NOTION_API_URL || 
       // uncomment below for production
-      'https://ideality-stage.herokuapp.com/api/notion/',
+      'https://ideality.app/api/notion/',
       // uncomment below for development
       // 'http://localhost:2479/api/notion/',
 
