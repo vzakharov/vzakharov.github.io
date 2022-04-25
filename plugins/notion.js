@@ -105,6 +105,39 @@ function Notion(token) {
           details
         }
       })
+    },
+
+    // get a block
+    async getBlock(blockId, { recurse = false } = {}) {
+
+      let { data, data: { has_children } } = await api.get(`blocks/${blockId}`)
+
+      if ( has_children ) {
+        data.children = await this.getBlockChildren(blockId, { recurse })
+      }
+
+      return data
+
+    },
+
+    // get block children
+    async getBlockChildren(blockId, { recurse = false } = {}) {
+
+      let { data: { results }} = await api.get(`blocks/${blockId}/children`)
+
+      if ( recurse )
+        await Promise.all(
+          results.map( async result => {
+            let { has_children } = result
+            if ( has_children ) {
+              result.children = await this.getBlockChildren(result.id, { recurse })
+            }
+            return result
+          })
+        )
+      
+      return results
+
     }
         
 
@@ -112,9 +145,9 @@ function Notion(token) {
 
 }
 
-function denotionize(data) {
+function denotionize(data, key = 'properties') {
 
-  data.properties = chain(data.properties)
+  data[key] = chain(data[key])
     .mapKeys( ( value, key ) => camelCase(key) )
     .mapValues( ( object, key ) => {
 

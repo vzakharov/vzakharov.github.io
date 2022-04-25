@@ -17,7 +17,7 @@
     @focus="focused=true"
     @blur="focused=false; initialContent=value"
     :style="{
-      display: 'inline',
+      display,
       outline: 'none',
       'white-space': 'pre-wrap'
     }"
@@ -46,7 +46,10 @@
       },
       type: {
         default: 'text'
-      }
+      },
+      display: {
+        default: 'inline'
+      },
     },
 
     data() {
