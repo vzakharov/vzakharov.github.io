@@ -260,7 +260,7 @@
 
   import axios from 'axios'
 
-  import copyPrice from '~/plugins/copyPrice'
+  import pricing from '~/plugins/pricing'
   import contentTypes from '~/plugins/contentTypes'
 
   import Notion from '~/plugins/notion'
@@ -268,7 +268,7 @@
   export default {
 
     mixins: [
-      copyPrice,
+      pricing,
       contentTypes
     ],
 
@@ -306,7 +306,7 @@
       },
 
       totalPrice() {
-        return this.copyPrice(this.totalWords)
+        return this.getPrice(this.totalWords)
       },
 
       discount() {
@@ -479,7 +479,7 @@
       },
 
       getItemPrice({ words, quantity }) {
-        return this.copyPrice(words) * quantity
+        return this.getPrice(words) * quantity
       },
 
       sumBy

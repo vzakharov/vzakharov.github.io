@@ -99,14 +99,14 @@
 <script>
 
   // mixin to calculate price based on size
-  import copyPrice from '@/plugins/copyPrice'
+  import pricing from '@/plugins/pricing'
 
 
   export default {
 
     props: [ 'contentType', 'totalWords' ],
 
-    mixins: [ copyPrice ],
+    mixins: [ pricing ],
 
     computed: {
       
@@ -115,11 +115,11 @@
       },
 
       basePrice() {
-        return this.copyPrice(this.words)
+        return this.getPrice(this.words)
       },
 
       discountedPrice() {
-        return this.copyPrice(this.words, this.totalWords)
+        return this.getPrice(this.words, this.totalWords)
       },
 
 

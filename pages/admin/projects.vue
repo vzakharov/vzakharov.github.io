@@ -471,8 +471,8 @@
           data = []
 
         for ( let project of projects ) {
-          // Add keys to headers (if not there yet)
-          headers = uniq([ ...headers, ...keys(project) ])
+          // // Add keys to headers (if not there yet)
+          // headers = uniq([ ...headers, ...keys(project) ])
           // Add values to data
           let rowData = []
           for ( let key of headers )
