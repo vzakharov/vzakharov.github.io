@@ -350,7 +350,7 @@
         historyPreview: null,
         showHistoryChart: true,
         historyChart: null,
-        autoStartDocTimer: false,
+        autoStartDocTimer: true,
         console,
         document
       }
@@ -367,12 +367,15 @@
         .map( key => JSON.parse( localStorage.getItem( key ) ) )
         .value()
       
+      if ( !this.docs.length ) {
+        this.docs = [ newDoc() ]
+      }
+      
       this.doc = 
         _.find( this.docs, {
           id: Number( this.$route.query.id || localStorage.getItem( 'lastDocId' ) )
         } ) 
-        || this.docs[0] 
-        || newDoc()
+        || this.docs[0]
 
       const onResize = () => {
         this.width = window.innerWidth
@@ -669,8 +672,10 @@
   font-size: 1.2em;
   font-family: 'Sorts Mill Goudy', 'Georgia', serif;
   /* Rounded shadow, no borders */
-  box-shadow: 0px 0px 5px 0px #ccc;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
   border-radius: 5px;
+
+  min-height: calc(100vh - 120px);
   
   background-color: #fff;
 }
