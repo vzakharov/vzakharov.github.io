@@ -276,14 +276,13 @@
             id="editor"
             class="border border-secondary rounded p-3"
             :style="{
-              'white-space': 'pre-wrap', 'height': '90vh', outline: 'none', 'border-color': '#ccc!important',
+              'height': '90vh', outline: 'none', 'border-color': '#ccc!important',
               'background-color': historyPreview ? '#f0f0f0' : '#fff',
               overflowY: 'scroll',
             }"
             :contenteditable="!historyPreview"
-            v-text="historyPreview ? historyPreview.content : tempContent"
-            @input="doc.content = $event.target.innerText; /*console.log($event.target.innerHTML)*/"
-            @keydown.enter.prevent="document.execCommand('insertHTML', false, '\n')"
+            v-html="format(historyPreview ? historyPreview.content : tempContent)"
+            @input="doc.content = $event.target.innerText; console.log($event.target.innerHTML)"            
             @blur="tempContent = doc.content"
           />
 
@@ -497,6 +496,25 @@
     },
 
     methods: {
+
+      blocks(content) {
+        return content.split(/\n+/).map(paragraph => {
+          let tag
+          // If it starts with #, ##, ###, or ####, wrap it in a heading
+          if ( paragraph.match( /^(#+)/ ) ) {
+            tag = 'h' + paragraph.match( /^(#+)/ )[1].length
+          } else {
+            tag = 'p'
+          }
+          return `<${tag}>${paragraph}</${tag}>`
+        })
+      },
+
+      format(content) {
+        // console.log(content)
+        // Split into paragraphs and wrap each in a respective tag
+        return this.blocks(content).join('\n')
+      },
 
       startDocTimer() {
 
