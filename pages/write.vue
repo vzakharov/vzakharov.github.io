@@ -8,7 +8,7 @@
   >
     <!-- Toolbar -->
     <div 
-      class="d-flex justify-content-start align-items-center sticky-top pb-1 mb-1 border-bottom"
+      class="d-flex justify-content-start align-items-center sticky-top pb-1 border"
     >
 
       <!-- Toggle sidebar -->
@@ -76,7 +76,7 @@
         }"
         :style="{
           opacity: width < 768 && 0.9,
-          overflowY: 'scroll',
+          overflowY: 'auto',
           fontSize: '0.7em',
         }"
         cols="8" md="5" lg="4" xl="3"
@@ -90,8 +90,8 @@
             cols="9"
             class="p-2"
             v-text="
-              // Replace newlines with ' / '
-              d.content.replace(/\n+/g, ' / ')
+              // Strip html tags
+              d.content.replace(/<[^>]+>/g, '')
               || 
               // Created date and time written as e.g. 'Thu, Apr 10, 10:00 am'
               new Date(d.created).toLocaleString('en-US', {
@@ -264,20 +264,30 @@
 
       <!-- Main content -->
       <b-col
-        class="full-height"
+        class="full-height bg-light pt-4"
+        style="overflow: auto;"
       >
         <div 
           :style="{
-            'max-width': '800px', 'margin': '0 auto' 
+            maxWidth: '900px',
+            margin: '0 auto',
           }"
         >
           <!-- Editor div -->
-          <VueEditor v-model="doc.content" />
+          <VueEditor 
+            id="editor"
+            v-model="content" 
+            placeholder="Hello, world!"
+            :disabled="!!historyPreview"
+            :style="{
+              backgroundColor: historyPreview ? '#eee' : '#fff',
+            }"
+          />
 
           <!-- Wordcount in small text on the right -->
           <div
-            class="text-end small mt-2 sticky-bottom"
-            style="color: #bbb"
+            class="small"
+            style="color: #bbb; position: fixed; right: 0; top: 0; z-index: 1; padding: 0.5em; background-color: #fff;"
           >
             {{ wordcount }} {{ wordcount === 1 ? 'word' : 'words' }}
             <!-- Words per hour -->
@@ -340,7 +350,7 @@
         historyPreview: null,
         showHistoryChart: true,
         historyChart: null,
-        autoStartDocTimer: true,
+        autoStartDocTimer: false,
         console,
         document
       }
@@ -399,6 +409,16 @@
     },
 
     computed: {
+
+      content: {
+        get() {
+          return ( this.historyPreview || this.doc ).content
+        },
+
+        set(value) {
+          ( this.historyPreview || this.doc ).content = value
+        }
+      },
 
       docTimeAsHHMMSS: {
           
@@ -519,7 +539,15 @@
 
       getWordcount( content ) {
 
-        return content ? content.split(/\W+/).length : 0
+        if ( !(content?.trim()) )
+          return 0
+
+        // Strip HTML tags
+        let stripped = content.replace( /<[^>]+>/g, ' ' )
+        console.log('stripped', stripped)
+        let words = stripped.split( /\W+/ ).filter( word => word.trim() )
+        console.log('words', words)
+        return words.length
 
       },
 
@@ -635,6 +663,21 @@
 .full-height {
   height: calc(100vh - 48px);
   /*var(--full-height);*/
+}
+
+#editor {
+  font-size: 1.2em;
+  font-family: 'Sorts Mill Goudy', 'Georgia', serif;
+  /* Rounded shadow, no borders */
+  box-shadow: 0px 0px 5px 0px #ccc;
+  border-radius: 5px;
+  
+  background-color: #fff;
+}
+
+/* Hide ql toolbar */
+.ql-toolbar {
+  display: none;
 }
 
 </style>
