@@ -272,20 +272,7 @@
           }"
         >
           <!-- Editor div -->
-          <div 
-            id="editor"
-            class="border border-secondary rounded p-3"
-            :style="{
-              'white-space': 'pre-wrap', 'height': '90vh', outline: 'none', 'border-color': '#ccc!important',
-              'background-color': historyPreview ? '#f0f0f0' : '#fff',
-              overflowY: 'scroll',
-            }"
-            :contenteditable="!historyPreview"
-            v-text="historyPreview ? historyPreview.content : tempContent"
-            @input="doc.content = $event.target.innerText; /*console.log($event.target.innerHTML)*/"
-            @keydown.enter.prevent="document.execCommand('insertHTML', false, '\n')"
-            @blur="tempContent = doc.content"
-          />
+          <VueEditor v-model="doc.content" />
 
           <!-- Wordcount in small text on the right -->
           <div
@@ -328,7 +315,13 @@
     }
   }
 
+  import { VueEditor } from 'vue2-quill-editor'
+
   export default {
+
+    components: {
+      VueEditor
+    },
 
     data() {
 
