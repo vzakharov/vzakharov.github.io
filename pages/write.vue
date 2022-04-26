@@ -15,10 +15,10 @@
       <b-button
         @click="() => showSidebar = !showSidebar"
         size="sm"
-        variant="outline-secondary"
+        :variant="showSidebar ? 'outline-secondary' : 'light'"
         class="m-1"
       >
-        <span v-text="showSidebar ? '<<' : '>>'"/>
+        ≡
       </b-button>
 
       <!-- Start/stop doc timer -->
@@ -76,7 +76,8 @@
         }"
         :style="{
           opacity: width < 768 && 0.9,
-          'overflow-y': 'scroll',
+          overflowY: 'scroll',
+          fontSize: '0.7em',
         }"
         cols="8" md="5" lg="4" xl="3"
       >
@@ -207,6 +208,14 @@
                 @click="
                   historyPreview = item
                 "
+                @mouseover="
+                  historyPreview = item
+                "
+                @mouseleave="
+                  window.setTimeout(() => {
+                    historyPreview == item && ( historyPreview = null )
+                  }, 1000)
+                "
               />
             </template>
 
@@ -256,24 +265,39 @@
       <!-- Main content -->
       <b-col
         class="full-height"
-        style="overflow-y: scroll;"
       >
-        <!-- Editor div -->
         <div 
-          id="editor"
-          class="border border-secondary rounded p-3"
           :style="{
-            'white-space': 'pre-wrap', 'min-height': '75vh', outline: 'none', 'border-color': '#ccc!important',
-            'background-color': historyPreview ? '#f0f0f0' : '#fff',
             'max-width': '800px', 'margin': '0 auto' 
           }"
-          :contenteditable="!historyPreview"
-          v-text="historyPreview ? historyPreview.content : tempContent"
-          @input="doc.content = $event.target.innerText; /*console.log($event.target.innerHTML)*/"
-          @keydown.enter.prevent="document.execCommand('insertHTML', false, '\n')"
-          @blur="tempContent = doc.content"
-        />
-        {{ wordcount }} word{{ wordcount === 1 ? '' : 's' }}
+        >
+          <!-- Editor div -->
+          <div 
+            id="editor"
+            class="border border-secondary rounded p-3"
+            :style="{
+              'white-space': 'pre-wrap', 'height': '90vh', outline: 'none', 'border-color': '#ccc!important',
+              'background-color': historyPreview ? '#f0f0f0' : '#fff',
+              overflowY: 'scroll',
+            }"
+            :contenteditable="!historyPreview"
+            v-text="historyPreview ? historyPreview.content : tempContent"
+            @input="doc.content = $event.target.innerText; /*console.log($event.target.innerHTML)*/"
+            @keydown.enter.prevent="document.execCommand('insertHTML', false, '\n')"
+            @blur="tempContent = doc.content"
+          />
+
+          <!-- Wordcount in small text on the right -->
+          <div
+            class="text-end small mt-2 sticky-bottom"
+            style="color: #bbb"
+          >
+            {{ wordcount }} {{ wordcount === 1 ? 'word' : 'words' }}
+            <!-- Words per hour -->
+            ~{{ Math.round(wordcount / ( historyPreview || doc ).time * 3600 / 10 ) * 10 }} words/hour
+          </div>
+
+        </div>
 
         <!-- Filler div to leave some space at the bottom -->
         <div
@@ -411,8 +435,8 @@
       },
 
       wordcount() {
-
-        return this.getWordcount( this.doc.content )
+        let { content } = this.historyPreview || this.doc
+        return this.getWordcount( content )
 
       },
 
@@ -447,6 +471,23 @@
               },
               y: {
                 min: 0
+              }
+            },
+            onHover: (event, [ item ]) =>{
+              // console.log(item)
+              if ( item ) {
+                // Find the doc corresponding to the item
+                // console.log(item)
+                const doc = this.doc.history[item.index]
+                // Set preview to the doc
+                this.historyPreview = doc
+                // console.log(doc)
+              } else {
+                const doc = this.historyPreview
+                // Clear preview after a while
+                setTimeout(() => {
+                  this.historyPreview == doc && (this.historyPreview = null)
+                }, 1000)
               }
             }
           },
