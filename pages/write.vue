@@ -2,30 +2,58 @@
   <!-- A simple editor with a sidebar -->
   <b-container 
     fluid
+    class="px-0"
+    v-if="doc"
   >
     <!-- Toolbar -->
-    <div class="d-flex justify-content-start p-2">
+    <div 
+      class="d-flex justify-content-start align-items-center sticky-top pb-1 mb-1 border-bottom"
+    >
+
+      <!-- Toggle sidebar -->
       <b-button
-        v-for="({ method, caption }, key) in {
-          toggleSidebar: {
-            method: () => showSidebar = !showSidebar,
-            caption: showSidebar ? '<<' : '>>'
-          }
-        }"
-        :key="key"
-        @click="method()"
+        @click="() => showSidebar = !showSidebar"
         size="sm"
         variant="outline-secondary"
+        class="m-1"
       >
-        {{ caption }}
+        <span v-text="showSidebar ? '<<' : '>>'"/>
       </b-button>
+
+      <!-- Start/stop doc timer -->
+      <b-button
+        class="m-1"
+        @click="() => {
+          if ( !docTimer ) {
+            startDocTimer()
+          } else {
+            window.clearInterval(docTimer)
+            docTimer = null
+          }
+        }"
+        size="sm"
+        :variant="docTimer ? 'outline-danger' : 'success'"
+      >
+        {{ docTimer ? 'Stop timer' : 'Start timer' }}
+      </b-button>
+
+      <!-- Doc time formatted as hh:mm:ss -->
+      <b-form-input
+        class="m-1"
+        v-model="docTimeAsHHMMSS"
+        type="text"
+        size="sm"
+        variant="outline-secondary"
+        style="max-width: 100px"
+      />
+
     </div>
     <b-row
       id="workspace"
       :style="{
         '--full-height': `calc(100vh - ${workspaceTop}px)`,
       }"
-      class="full-height"
+      class="full-height px-2"
     >
       <!-- Sidebar, toggleable. On small screens, it has absolute positioning -->
       <b-col
@@ -109,21 +137,133 @@
         >
           +
         </b-button>
+
+        <!-- History of wordcount vs time -->
+        <template
+          v-if="doc.history && doc.history.length"
+        >
+          <h5
+            class="mt-4"
+          >
+            Revision history
+          </h5>
+
+          <!-- Switch between chart/table button -->
+          <b-button
+            size="sm"
+            class="mt-2"
+            variant="outline-secondary"
+            @click="showHistoryChart = !showHistoryChart"
+          >
+            {{ showHistoryChart ? 'Table' : 'Chart' }}
+          </b-button>
+
+          <canvas
+            v-show="showHistoryChart"
+            :id="'history-chart'"
+          />
+
+          <b-table
+            v-if="!showHistoryChart"
+            :items="doc.history"
+            :fields="[
+              {
+                key: 'time',
+                label: 'Time'
+              },
+              {
+                key: 'content',
+                label: 'Words',
+                formatter: getWordcount
+              },
+              {
+                key: 'remove',
+                label: ''
+              }
+            ]"
+          >
+
+            <template #cell(time)="{ item }">
+              <!-- Button to preview content at that time; sets historyPreview to that item -->
+              <span
+                v-text="timeAsHHMMSS(item.time)"
+                :style="{
+                  cursor: 'pointer',
+                  'font-weight': item === historyPreview ? 'bold' : 'normal'
+                }"
+                @click="
+                  historyPreview = item
+                "
+              />
+            </template>
+
+            <template #cell(remove)="{ item }">
+              <b-button-close
+                size="sm"
+                @click="
+                  if ( window.confirm('Are you sure? THERE IS NO UNDO!') ) {
+                    doc.history = without(doc.history, item)
+                  }
+                "
+              />
+            </template>
+
+          </b-table>
+          <!-- Button to exit preview -->
+          <b-button
+            v-if="historyPreview"
+            class="mt-2"
+            @click="
+              historyPreview = null
+            "
+            size="sm"
+            variant="outline-secondary"
+          >
+            Exit preview
+          </b-button>
+          
+          <!-- Clear history button -->
+          <b-button
+            class="mt-2"
+            @click="
+              if ( window.confirm('Are you sure? THERE IS NO UNDO!') ) {
+                doc.history = []
+              }
+            "
+            size="sm"
+            variant="outline-secondary"
+          >
+            Clear history
+          </b-button>
+
+        </template>
+
       </b-col>
       <!-- Main content -->
       <b-col
+        class="full-height"
         style="max-width: 800px; margin: 0 auto;"
       >
         <!-- Editor div -->
         <div 
           id="editor"
           class="border border-secondary rounded p-3"
-          style="white-space: pre-wrap; min-height: 75vh; outline: none; border-color: #ccc!important;"
-          contenteditable
-          v-text="tempContent"
+          :style="{
+            'white-space': 'pre-wrap', 'min-height': '75vh', outline: 'none', 'border-color': '#ccc!important',
+            'background-color': historyPreview ? '#f0f0f0' : '#fff',
+          }"
+          :contenteditable="!historyPreview"
+          v-text="historyPreview ? historyPreview.content : tempContent"
           @input="doc.content = $event.target.innerText"
           @blur="tempContent = doc.content"
         />
+        {{ wordcount }} word{{ wordcount === 1 ? '' : 's' }}
+
+        <!-- Filler div to leave some space at the bottom -->
+        <div
+          style="height: 200px"
+        />
+
       </b-col>
     </b-row>
   </b-container>
@@ -137,6 +277,8 @@
   const {
     findIndex, without
   } = _
+
+  import Chart from 'chart.js/auto'
 
   function newDoc() {
     return {
@@ -158,7 +300,13 @@
         workspaceTop: 0,
         docs: null,
         doc: null,
-        window: null
+        docChanged: true,
+        window: null,
+        docTimer: null,
+        idleTimer: null,
+        historyPreview: null,
+        showHistoryChart: true,
+        historyChart: null
       }
 
     },
@@ -175,7 +323,7 @@
       
       this.doc = 
         _.find( this.docs, {
-          id: Number( this.$route.params.id || localStorage.getItem( 'lastDocId' ) )
+          id: Number( this.$route.query.id || localStorage.getItem( 'lastDocId' ) )
         } ) 
         || this.docs[0] 
         || newDoc()
@@ -190,14 +338,137 @@
       window.addEventListener('resize', onResize)
 
       this.window = window
+
       
       this.mounted = true
 
-      this.$nextTick(onResize)
+      this.$nextTick(() => {
+
+        onResize()
+
+        this.$watch('chartConfig', { immediate: true, handler(config) {
+
+          let chartElement = document.getElementById('history-chart')
+          console.log(chartElement)
+
+          this.historyChart?.destroy()
+          this.historyChart = new Chart(
+            chartElement, config
+          )
+
+        }})
+        
+      })
+
+    },
+
+    computed: {
+
+      docTimeAsHHMMSS: {
+          
+          get() {
+  
+            return this.timeAsHHMMSS( this.doc.time )
+  
+          },
+  
+          set( value ) {
+  
+            const {
+              doc
+            } = this
+
+            // Check format for \d\d:\d\d:\d\d
+            if ( !value.match( /^\d\d?:\d\d:\d\d$/ ) ) {
+              return
+            }
+  
+            const [hh, mm, ss] = value.split(':')
+  
+            doc.time = Number( hh ) * 3600 + Number( mm ) * 60 + Number( ss )
+  
+          }
+  
+      },
+
+      wordcount() {
+
+        return this.getWordcount( this.doc.content )
+
+      },
+
+      chartConfig() {
+
+        return {
+          type: 'scatter',
+          data: {
+            datasets: [
+              {
+                label: 'Words vs minutes',
+                backgroundColor: 'rgba(54,162,235,0.2)',
+                borderColor: 'rgba(54,162,235,1)',
+                data: this.doc.history?.map( ({ time, content }) => {
+                  return {
+                    x: time/60,
+                    y: this.getWordcount( content )
+                  }
+                })
+              }
+            ]
+          },
+          options: {
+            // Disable animation
+            animation: {
+              duration: 0,
+            },
+            // x and y min is 0
+            scales: {
+              x: {
+                min: 0
+              },
+              y: {
+                min: 0
+              }
+            }
+          },
+        }
+      },
 
     },
 
     methods: {
+
+      startDocTimer() {
+
+        if ( typeof this.doc.time === 'undefined' ) {
+          this.$set( this.doc, 'time', 0 )
+        }
+
+        if ( !this.docTimer )
+          this.docTimer = setInterval(() => {
+            this.doc.time += 1
+          }, 1000)
+
+      },
+
+      timeAsHHMMSS( time ) {
+
+        if ( !time )
+          return '--:--:--'
+
+        const hh = Math.floor( time / 3600 )
+        const mm = Math.floor( ( time - hh * 3600 ) / 60 )
+        const ss = time - hh * 3600 - mm * 60
+
+        return `${hh}:${mm < 10 ? '0' : ''}${mm}:${ss < 10 ? '0' : ''}${ss}`
+
+      },
+
+      getWordcount( content ) {
+
+        return content ? content.split(/\W+/).length : 0
+
+      },
 
       newDoc, without, findIndex
 
@@ -219,6 +490,46 @@
 
           // Write the last doc id to localStorage
           localStorage.setItem( 'lastDocId', this.doc.id )
+
+          this.docChanged = true
+
+        }
+
+      },
+
+      'doc.content': {
+
+        handler() {
+          
+          let {
+            doc
+          } = this
+
+          // Exit if the doc itself is different (not just content)
+          if ( this.docChanged ) {
+            this.docChanged = false
+            return
+          }
+
+          // Reset the idle timer
+          clearTimeout( this.idleTimer )
+
+          this.idleTimer = setTimeout(() => {
+            
+            // Save current content to history, creating it if it doesn't exist
+            let history = doc.history || this.$set( doc, 'history', [] )
+
+            // Push current content to history
+            let { time, content } = doc
+            history.push({
+              time,
+              content
+            })
+
+          }, 5000)
+
+          // Start doc timer
+          this.startDocTimer()
 
         }
 
@@ -268,7 +579,7 @@
 }
 
 .full-height {
-  height: var(--full-height);
+  /* height: var(--full-height); */
 }
 
 </style>
