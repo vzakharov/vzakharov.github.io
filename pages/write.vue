@@ -4,6 +4,7 @@
     fluid
     class="px-0"
     v-if="doc"
+    style="overflow: hidden"
   >
     <!-- Toolbar -->
     <div 
@@ -47,7 +48,18 @@
         style="max-width: 100px"
       />
 
+      <!-- Switch to autostart the doc timer on content change -->
+      <b-check
+        v-model="autoStartDocTimer"
+        size="sm"
+        variant="outline-secondary"
+        class="m-1"
+      >
+        Start on input
+      </b-check>
+
     </div>
+
     <b-row
       id="workspace"
       :style="{
@@ -64,8 +76,9 @@
         }"
         :style="{
           opacity: width < 768 && 0.9,
+          'overflow-y': 'scroll',
         }"
-        cols="8" md="4" lg="3" xl="2"
+        cols="8" md="5" lg="4" xl="3"
       >
         <!-- List of documents, their content cut with ellipsis -->
         <b-row
@@ -239,10 +252,11 @@
         </template>
 
       </b-col>
+
       <!-- Main content -->
       <b-col
         class="full-height"
-        style="max-width: 800px; margin: 0 auto;"
+        style="overflow-y: scroll;"
       >
         <!-- Editor div -->
         <div 
@@ -251,10 +265,12 @@
           :style="{
             'white-space': 'pre-wrap', 'min-height': '75vh', outline: 'none', 'border-color': '#ccc!important',
             'background-color': historyPreview ? '#f0f0f0' : '#fff',
+            'max-width': '800px', 'margin': '0 auto' 
           }"
           :contenteditable="!historyPreview"
           v-text="historyPreview ? historyPreview.content : tempContent"
-          @input="doc.content = $event.target.innerText"
+          @input="doc.content = $event.target.innerText; /*console.log($event.target.innerHTML)*/"
+          @keydown.enter.prevent="document.execCommand('insertHTML', false, '\n')"
           @blur="tempContent = doc.content"
         />
         {{ wordcount }} word{{ wordcount === 1 ? '' : 's' }}
@@ -306,7 +322,10 @@
         idleTimer: null,
         historyPreview: null,
         showHistoryChart: true,
-        historyChart: null
+        historyChart: null,
+        autoStartDocTimer: true,
+        console,
+        document
       }
 
     },
@@ -529,7 +548,8 @@
           }, 5000)
 
           // Start doc timer
-          this.startDocTimer()
+          if ( this.autoStartDocTimer )
+            this.startDocTimer()
 
         }
 
@@ -579,7 +599,8 @@
 }
 
 .full-height {
-  /* height: var(--full-height); */
+  height: calc(100vh - 48px);
+  /*var(--full-height);*/
 }
 
 </style>
