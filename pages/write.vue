@@ -152,7 +152,7 @@
 
       return {
         mounted: false,
-        showSidebar: true,
+        showSidebar: null,
         width: null,
         tempContent: null,
         workspaceTop: 0,
@@ -183,12 +183,14 @@
       const onResize = () => {
         this.width = window.innerWidth
         this.workspaceTop = document.getElementById('workspace').offsetTop
+        this.showSidebar = this.width >= 768
       }
 
       // Monitor innerWidth to toggle sidebar
       window.addEventListener('resize', onResize)
 
       this.window = window
+      
       this.mounted = true
 
       this.$nextTick(onResize)
@@ -214,6 +216,9 @@
           this.$nextTick(() => {
             document.getElementById('editor')?.focus()
           })
+
+          // Write the last doc id to localStorage
+          localStorage.setItem( 'lastDocId', this.doc.id )
 
         }
 
