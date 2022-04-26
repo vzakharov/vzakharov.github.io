@@ -275,16 +275,30 @@
           <div 
             id="editor"
             class="border border-secondary rounded p-3"
-            :style="{
-              'height': '90vh', outline: 'none', 'border-color': '#ccc!important',
-              'background-color': historyPreview ? '#f0f0f0' : '#fff',
-              overflowY: 'scroll',
-            }"
             :contenteditable="!historyPreview"
-            v-html="format(historyPreview ? historyPreview.content : tempContent)"
-            @input="doc.content = $event.target.innerText; console.log($event.target.innerHTML)"            
-            @blur="tempContent = doc.content"
-          />
+            :style="{
+              height: '90vh', borderColor: '#ccc!important',
+              backgroundColor: historyPreview ? '#f0f0f0' : '#fff',
+              overflowY: 'scroll', outline: 'none'
+            }"
+            @input="
+              if ( doc.content != $event.target.innerText ) {
+                console.log('input', $event.target.innerText)
+                doc.content = $event.target.innerText                
+              }
+            "
+            @blur="
+              tempContent = doc.content
+              console.log('blur', doc.content)
+            "
+          >
+            <component
+              v-for="block, index in blocks"
+              :key="index"
+              :is="block.tag"
+              v-html="block.text"
+            />
+          </div>
 
           <!-- Wordcount in small text on the right -->
           <div
@@ -406,6 +420,14 @@
 
     computed: {
 
+      content() {
+        return this.historyPreview?.content || this.tempContent
+      },
+
+      blocks() {
+        return this.getBlocks( this.content )
+      },
+
       docTimeAsHHMMSS: {
           
           get() {
@@ -497,23 +519,27 @@
 
     methods: {
 
-      blocks(content) {
-        return content.split(/\n+/).map(paragraph => {
+      getBlocks(content) {
+        console.log('blocks', content)
+        return content.split(/\n+/).map(text => {
           let tag
           // If it starts with #, ##, ###, or ####, wrap it in a heading
-          if ( paragraph.match( /^(#+)/ ) ) {
-            tag = 'h' + paragraph.match( /^(#+)/ )[1].length
+          if ( text.match( /^(#+)/ ) ) {
+            tag = 'h' + text.match( /^(#+)/ )[1].length
           } else {
             tag = 'p'
           }
-          return `<${tag}>${paragraph}</${tag}>`
+          console.log(tag, text)
+          return { tag, text }
         })
       },
 
       format(content) {
         // console.log(content)
         // Split into paragraphs and wrap each in a respective tag
-        return this.blocks(content).join('\n')
+        return this.getBlocks(content).map(({ tag, text }) => {
+          return `<${tag}>${text}</${tag}>`
+        }).join('\n')
       },
 
       startDocTimer() {
