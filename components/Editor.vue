@@ -1,6 +1,7 @@
 <template>
   <div
     id="editor"
+    class="cool-shadow"
     :style="{
       'background-color': disabled ? '#eee' : '#fff',
       overflowY: 'scroll',
@@ -125,7 +126,7 @@
       refresh() {
         this.content = this.value
       }
-      
+
     }
 
   }
@@ -138,7 +139,6 @@
     font-size: 1.2em;
     font-family: 'Sorts Mill Goudy', 'Georgia', serif;
     /* Rounded shadow, no borders */
-    box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
     border-radius: 5px;
 
     height: calc(100vh - 120px);
