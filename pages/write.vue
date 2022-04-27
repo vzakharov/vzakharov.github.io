@@ -220,12 +220,16 @@
 
             <template #cell(remove)="{ item }">
               <b-button-close
+                v-if="doc.history.indexOf(item) > 0"
                 size="sm"
-                @click="
+                @click="() => {
                   if ( window.confirm('Are you sure? THERE IS NO UNDO!') ) {
+                    let i = doc.history.indexOf(item)
                     doc.history = without(doc.history, item)
+                    // recalculate delta
+                    $set( doc.history[i], 'delta', withDelta( 'create', doc.history[i-1].content, doc.history[i].content ) )
                   }
-                "
+                }"
               />
             </template>
 
@@ -356,7 +360,11 @@
     return {
       content: '',
       created: Date.now(),
-      id: Math.round( Date.now() + Math.random() ) * 1000
+      id: Math.round( Date.now() + Math.random() ) * 1000,
+      history: [{
+        time: 0,
+        content: ''
+      }]
     }
   }
 
@@ -428,7 +436,7 @@
         this.$watch('chartConfig', { immediate: true, handler(config) {
 
           let chartElement = document.getElementById('history-chart')
-          console.log(chartElement)
+          // console.log(chartElement)
 
           this.historyChart?.destroy()
           this.historyChart = new Chart(
@@ -517,12 +525,15 @@
                 label: 'Words vs minutes',
                 backgroundColor: 'rgba(54,162,235,0.2)',
                 borderColor: 'rgba(54,162,235,1)',
-                data: this.doc.history?.map( ({ time, content }) => {
-                  return {
-                    x: time/60,
-                    y: this.getWordcount( content )
-                  }
-                })
+                data: [
+                  ...this.doc.history?.map( ({ time, content }) => {
+                    return {
+                      x: time/60,
+                      y: this.getWordcount( content )
+                    }
+                  }),
+                  ...this.doc.time && this.wordcount ? [{ x: this.doc.time/60, y: this.wordcount }] : []
+                ]
               }
             ]
           },
