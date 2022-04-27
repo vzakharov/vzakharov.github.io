@@ -423,6 +423,21 @@
         }
       },
 
+      formattedContent: {
+
+        get() {
+          let { content } = this
+          content = content.replace(/\*\*(.+?)\*\*/g, '**<strong>$1</strong>**')
+          console.log(content)
+          return content
+        },
+
+        set(value) {
+          this.content = value.replace(/(?!\*\*)(<strong>.+?<\/strong>(?!\*\*))/g, '**$1**')
+        }
+
+      },
+
       docTimeAsHHMMSS: {
           
           get() {
@@ -547,9 +562,9 @@
 
         // Strip HTML tags
         let stripped = content.replace( /<[^>]+>/g, ' ' )
-        console.log('stripped', stripped)
+        // console.log('stripped', stripped)
         let words = stripped.split( /\W+/ ).filter( word => word.trim() )
-        console.log('words', words)
+        // console.log('words', words)
         return words.length
 
       },
