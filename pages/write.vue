@@ -274,39 +274,37 @@
         >
           <!-- Editor div -->
 
-          <!-- <div 
-            id="editor"
-            class="border border-secondary rounded p-3"
-            :style="{
-              'height': '90vh', outline: 'none', 'border-color': '#ccc!important',
-              'background-color': historyPreview ? '#f0f0f0' : '#fff',
-              overflowY: 'scroll',
-            }"
-            :contenteditable="!historyPreview"
-            v-html="historyPreview ? historyPreview.content : formattedContent"
-            v-once
-            @input="
-              doc.content = $event.target.innerText
-            "
-          /> -->
-          <Editor v-model="(historyPreview || doc).content" :key="historyPreview ? historyPreview.time : doc.id" />
 
-          <!-- Wordcount in small text on the right -->
-          <div
-            class="small"
-            style="color: #bbb; position: fixed; right: 0; top: 0; z-index: 1; padding: 0.5em; background-color: #fff;"
-          >
-            {{ wordcount }} {{ wordcount === 1 ? 'word' : 'words' }}
-            <!-- Words per hour -->
-            ~{{ Math.round(wordcount / ( historyPreview || doc ).time * 3600 / 10 ) * 10 }} words/hour
-          </div>
+          <Editor 
+            v-model="(historyPreview || doc).content" 
+            :key="historyPreview ? historyPreview.time : doc.id"
+            v-bind="{ disableFormatting }"
+          />
+
+          <b-row>
+            <b-col>
+              <!-- Switch to disable formatting -->
+              <b-check
+                v-model="disableFormatting"
+                size="sm"
+                variant="outline-secondary"
+                switch
+              >
+                Disable formatting
+              </b-check>
+            </b-col>
+            <!-- Wordcount in small text on the right -->
+            <b-col
+              class="small text-end text-muted"
+            >
+              {{ wordcount }} {{ wordcount === 1 ? 'word' : 'words' }}
+              <!-- Words per hour -->
+              ~{{ Math.round(wordcount / ( historyPreview || doc ).time * 3600 / 10 ) * 10 }} words/hour
+            </b-col>
+          </b-row>
 
         </div>
 
-        <!-- Filler div to leave some space at the bottom -->
-        <div
-          style="height: 200px"
-        />
 
       </b-col>
     </b-row>
@@ -352,6 +350,7 @@
         showHistoryChart: true,
         historyChart: null,
         autoStartDocTimer: true,
+        disableFormatting: false,
         console,
         document
       }
@@ -688,18 +687,6 @@
 .full-height {
   height: calc(100vh - 48px);
   /*var(--full-height);*/
-}
-
-#editor {
-  font-size: 1.2em;
-  font-family: 'Sorts Mill Goudy', 'Georgia', serif;
-  /* Rounded shadow, no borders */
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
-  border-radius: 5px;
-
-  min-height: calc(100vh - 120px);
-  
-  background-color: #fff;
 }
 
 /* Hide ql toolbar */
