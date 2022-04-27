@@ -28,9 +28,10 @@
     props: ['value', 'disabled', 'disableFormatting'],
 
     data() {
+      
       return {
 
-        content: this.value,
+        content: this.value
         
       }
     },
@@ -41,7 +42,7 @@
 
           let { content } = this
           // Break content into paragraphs, wrapping each paragraph in a respective tag
-          content = content.split(/\n+/).map( paragraph => {
+          content = content?.split(/\n+/).map( paragraph => {
             
             let
               tag = 'p',
@@ -108,6 +109,7 @@
           return content
 
       }
+
     },
 
     methods: {

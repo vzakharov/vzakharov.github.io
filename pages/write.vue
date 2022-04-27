@@ -257,6 +257,33 @@
             Clear history
           </b-button>
 
+          <!-- Copy as TSV button -->
+          <b-button
+            class="mt-2"
+            @click="
+              copyToClipboard(
+                `hours\twords\n${doc.history.map(
+                  item => `${item.time/3600}\t${getWordcount(item.content)}`
+                ).join('\n')}`
+              )
+            "
+            size="sm"
+            variant="outline-secondary"
+          >
+            Copy as TSV
+          </b-button>
+
+          <!-- Prune history (remove entries spaced less than 1 minute apart) -->
+          <b-button
+            class="mt-2"
+            @click="pruneHistory"
+            size="sm"
+            variant="outline-secondary"
+          >
+            Prune history
+          </b-button>
+
+
         </template>
 
       </b-col>
@@ -321,6 +348,9 @@
   } = _
 
   import Chart from 'chart.js/auto'
+  import fossilDelta from 'fossil-delta'
+
+
 
   function newDoc() {
     return {
@@ -535,6 +565,28 @@
 
     methods: {
 
+      pruneHistory() {
+
+        // Remove all history items whose time is spaced less than 60 seconds apart
+        let { history } = this.doc
+        let i = 1
+        while ( i < history.length ) {
+          let timeBetween = history[i].time - history[i-1].time
+          if ( timeBetween < 60 ) {
+            this.$delete( history, i )
+          } else {
+            // recalculate delta
+            this.$set( history[i], 'delta', this.withDelta( 'create', history[i-1].content, history[i].content ) )
+            i++
+          }
+        }
+
+      },
+
+      copyToClipboard( text ) {
+        navigator.clipboard.writeText( text )
+      },
+
       startDocTimer() {
 
         if ( typeof this.doc.time === 'undefined' ) {
@@ -575,6 +627,16 @@
 
       },
 
+      withDelta( action, ...texts ) {
+
+        let bytes = texts.map( text => new TextEncoder()?.encode( text ) )
+        let resultBytes = fossilDelta[action]( ...bytes ) // action is 'create' or 'apply'
+        let result = new TextDecoder().decode( Uint8Array.from( resultBytes ) )
+
+        return result
+
+      },
+
       newDoc, without, findIndex
 
     },
@@ -595,6 +657,27 @@
 
           // Write the last doc id to localStorage
           localStorage.setItem( 'lastDocId', this.doc.id )
+
+          let { history } = this.doc
+
+          for ( let i = 1; i < history?.length; i++ ) {
+            let [ before, after ] = [ i - 1, i ].map( index => history[index].content )
+            let { delta } = history[i]            
+            let deltaDefined = typeof delta !== 'undefined'
+            let missingKey = deltaDefined ? 'content' : 'delta'
+            let missingValue = this.withDelta(
+              deltaDefined ? 'apply' : 'create',
+              before,
+              deltaDefined ? delta : after
+            )
+
+            this.$set( 
+              history[i],
+              missingKey,
+              missingValue
+            )
+
+          }
 
           this.docChanged = true
 
@@ -628,7 +711,8 @@
             let { time, content } = doc
             history.push({
               time,
-              content
+              content,
+              delta: history.length && this.withDelta( 'create', history[history.length - 1].content, content )
             })
 
           }, 5000)
@@ -645,8 +729,14 @@
 
         // Write to localStorage under key = 'doc_[doc.id]'
         handler(doc) {
-
-          localStorage.setItem(`doc_${doc.id}`, JSON.stringify(doc))
+          
+          localStorage.setItem(`doc_${doc.id}`, JSON.stringify({
+            ...doc,
+            history: _.map(doc.history, ( item, i ) =>
+              // Remove 'content' for space saving
+              i ? _.omit( item, 'content' ) : item
+            )
+          }))
 
         },
 
