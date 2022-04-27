@@ -172,12 +172,16 @@
           </b-button>
 
           <canvas
-            v-show="showHistoryChart"
+            :style="{
+              display: showHistoryChart ? 'block' : 'none'
+            }"
             :id="'history-chart'"
           />
 
           <b-table
             v-if="!showHistoryChart"
+            sort-by="time"
+            sort-desc
             :items="doc.history"
             :fields="[
               {
@@ -437,11 +441,16 @@
 
           let chartElement = document.getElementById('history-chart')
           // console.log(chartElement)
+          if ( !this.historyChart ) {
+            this.historyChart = new Chart(
+              chartElement, config
+            )
+          } else {
 
-          this.historyChart?.destroy()
-          this.historyChart = new Chart(
-            chartElement, config
-          )
+            Object.assign( this.historyChart, config )
+            this.historyChart.update()
+
+          }
 
         }})
         
@@ -532,7 +541,7 @@
                       y: this.getWordcount( content )
                     }
                   }),
-                  ...this.doc.time && this.wordcount ? [{ x: this.doc.time/60, y: this.wordcount }] : []
+                  // ...!this.historyPreview && this.doc.time && this.wordcount ? [{ x: this.doc.time/60, y: this.wordcount }] : []
                 ]
               }
             ]
@@ -726,6 +735,25 @@
               delta: history.length && this.withDelta( 'create', history[history.length - 1].content, content )
             })
 
+            localStorage.setItem(`doc_${doc.id}`, JSON.stringify({
+              ...doc,
+              history: _.map(doc.history, ( item, i ) =>
+                // Remove 'content' for space saving
+                i ? _.omit( item, 'content' ) : item
+              )
+            }))
+
+            // Show a "Saved!" toast
+            this.$root.$bvToast.toast(
+              'Saved!',
+              {
+                title: 'Saved!',
+                autoHideDelay: 3000,
+                variant: 'success'
+              }
+            )
+
+
           }, 5000)
 
           // Start doc timer
@@ -736,24 +764,24 @@
 
       },
 
-      doc: {
+      // doc: {
 
-        // Write to localStorage under key = 'doc_[doc.id]'
-        handler(doc) {
+      //   // Write to localStorage under key = 'doc_[doc.id]'
+      //   handler(doc) {
           
-          localStorage.setItem(`doc_${doc.id}`, JSON.stringify({
-            ...doc,
-            history: _.map(doc.history, ( item, i ) =>
-              // Remove 'content' for space saving
-              i ? _.omit( item, 'content' ) : item
-            )
-          }))
+      //     localStorage.setItem(`doc_${doc.id}`, JSON.stringify({
+      //       ...doc,
+      //       history: _.map(doc.history, ( item, i ) =>
+      //         // Remove 'content' for space saving
+      //         i ? _.omit( item, 'content' ) : item
+      //       )
+      //     }))
 
-        },
+      //   },
 
-        deep: true
+      //   deep: true
 
-      },
+      // },
 
       docs: {
 
