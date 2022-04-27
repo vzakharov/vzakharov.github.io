@@ -15,9 +15,6 @@
       "
       @blur="blur"
     />
-    <div
-      style="height: 200px"
-    />
   </div>
 </template>
 
@@ -128,6 +125,7 @@
 </script>
 
 <style scoped>
+
   #editor {
     font-size: 1.2em;
     font-family: 'Sorts Mill Goudy', 'Georgia', serif;
@@ -136,9 +134,14 @@
     border-radius: 5px;
 
     height: calc(100vh - 120px);
-    padding: 20px;
+    padding: 80px 60px 200px 60px;
     
     background-color: #fff;
+  }
+
+  * >>> h1, * >>> h2, * >>> h3, * >>> h4, * >>> h5, * >>> h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
   }
 
 </style>
