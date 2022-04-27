@@ -90,8 +90,7 @@
             cols="9"
             class="p-2"
             v-text="
-              // Strip html tags
-              d.content.replace(/<[^>]+>/g, '')
+              d.content.trim().replace(/\n+/g, ' / ')
               || 
               // Created date and time written as e.g. 'Thu, Apr 10, 10:00 am'
               new Date(d.created).toLocaleString('en-US', {
@@ -107,7 +106,7 @@
               //'cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis': true,
               cursor: 'pointer', overflow: 'hidden', 'white-space': 'nowrap', 'text-overflow': 'ellipsis',
               // gray italic if no content
-              ...( !d.content && {
+              ...( !d.content.trim() && {
                 'font-style': 'italic',
                 'color': '#868686'
               } ),
@@ -275,20 +274,22 @@
         >
           <!-- Editor div -->
 
-          <div 
+          <!-- <div 
             id="editor"
             class="border border-secondary rounded p-3"
             :style="{
-              'white-space': 'pre-wrap', 'height': '90vh', outline: 'none', 'border-color': '#ccc!important',
+              'height': '90vh', outline: 'none', 'border-color': '#ccc!important',
               'background-color': historyPreview ? '#f0f0f0' : '#fff',
               overflowY: 'scroll',
             }"
             :contenteditable="!historyPreview"
-            v-text="historyPreview ? historyPreview.content : tempContent"
-            @input="doc.content = $event.target.innerText; /*console.log($event.target.innerHTML)*/"
-            @keydown.enter.prevent="document.execCommand('insertHTML', false, '\n')"
-            @blur="tempContent = doc.content"
-          />
+            v-html="historyPreview ? historyPreview.content : formattedContent"
+            v-once
+            @input="
+              doc.content = $event.target.innerText
+            "
+          /> -->
+          <Editor v-model="(historyPreview || doc).content" :key="historyPreview ? historyPreview.time : doc.id" />
 
           <!-- Wordcount in small text on the right -->
           <div
@@ -416,6 +417,7 @@
       content: {
         get() {
           return ( this.historyPreview || this.doc ).content
+          // return this.historyPreview?.content || this.tempContent
         },
 
         set(value) {
@@ -427,8 +429,13 @@
 
         get() {
           let { content } = this
-          content = content.replace(/\*\*(.+?)\*\*/g, '**<strong>$1</strong>**')
-          console.log(content)
+          // Break content into paragraphs, wrapping each paragraph in a respective tag
+          content = content.split('\n+').map( paragraph => {
+
+            return `<p>${paragraph}</p>`
+
+          }).join('\n') || '<p></p>'
+          
           return content
         },
 
