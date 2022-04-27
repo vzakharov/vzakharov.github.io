@@ -22,7 +22,7 @@
 
   export default {
 
-    props: ['value', 'disabled', 'disableFormatting'],
+    props: ['value', 'disabled', 'disableFormatting', 'refresh'],
 
     data() {
       
@@ -118,6 +118,14 @@
         }
       }
 
+    },
+
+    watch: {
+
+      refresh() {
+        this.content = this.value
+      }
+      
     }
 
   }

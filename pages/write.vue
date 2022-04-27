@@ -311,8 +311,8 @@
 
 
           <Editor 
-            v-model="(historyPreview || doc).content" 
-            :key="historyPreview ? historyPreview.time : doc.id"
+            v-model="(historyPreview || doc).content"
+            :refresh="historyPreview && historyPreview.time || doc.id"
             v-bind="{ disableFormatting }"
           />
 
