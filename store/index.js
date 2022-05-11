@@ -2,10 +2,10 @@
 
 export const state = () => ({
 
-  wphMin: 340,
-  wphMax: 610,
-  midpoint: 440,
-  hourlyRate: 170,
+  wphMin: 300,
+  wphMax: 900,
+  midpoint: 800,
+  hourlyRate: 200,
 
 })
 
