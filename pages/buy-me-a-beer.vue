@@ -1,18 +1,27 @@
 <!-- A buy-me-a-beer page -->
 <template>
   <div 
-    class="d-flex align-items-center justify-content-center vw-100 vh-100"
+    :class="{
+      'd-flex align-items-center justify-content-center': true,
+      'vw-100 vh-100': layout != 'none'
+    }"
   >
     <div 
-      class="rounded shadow p-3"
-      style="max-width: 600px; max-height: 600px"
+      :class="{
+        'rounded shadow p-3': layout != 'none',
+      }"
+      :style="{
+        maxWidth: '600px',
+        maxHeight: '600px',
+        zoom
+      }"
     >
-      <h1 class="text-center">Buy me a 🍺</h1>
+      <h1 class="text-center" v-text="h1"/>
       <div class="d-sm-none">
-        You could buy me a beer here, but the payment widget doesn't work on mobile, so please come back on a desktop device. Thanks!
+        Please rotate the screen to landscape mode.
       </div>
       <div class="d-none d-sm-block">
-        If you want to thank me for my work, this is the perfect place to do it.
+        <span v-html="text" />
         <!-- Div with amount input -->
         <b-form class="d-flex align-items-center justify-content-center mt-3 gap-3">
           <label
@@ -34,8 +43,8 @@
         </b-form>
         <!-- iframe to pay with src = paymentLink -->
         <div
-          class="mt-3 d-flex justify-content-center align-items-center"
-          style="height: 800px;"
+          class="mt-3 d-flex justify-content-center align-middle"
+          style="height: 800px; width: 500px"
         >
           <b-alert 
             v-if="paymentLink == 'Error'"
@@ -60,7 +69,7 @@
             style="width: 100%; height: 100%"
           />
           <!-- A please-wait message otherwise -->
-          <div v-else class="text-center">
+          <div v-else class="text-center align-middle">
             <b-spinner type="grow" variant="primary" />
             <span class="ml-2">Please wait, connecting to payment provider...</span>
           </div>
@@ -78,10 +87,22 @@
 
     data() {
 
+      let { 
+        h1 = 'Buy me a 🍺',
+        text = 'If you want to thank me for my work, this is the perfect place to do it.',
+        project, 
+        amount = 5,
+        layout,
+        zoom = 1
+      } = this.$route.query || {}
+
+      if ( project ) text = `Projects like <strong>${project}</strong> take a lot of time and effort, so if you want to thank me for my work, I would really appreciate it.`
+
       return {
         paymentLink: null,
         amountChangedTimeout: null,
-        amount: this.$route.query.amount || 5
+        amount, layout, zoom,
+        h1, text
       }
 
     },
