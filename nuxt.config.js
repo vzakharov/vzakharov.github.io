@@ -21,7 +21,7 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    title: 'vzakharov.github.io',
+    title: 'Vova Zakharov | Copywriter by day, coder by night',
     htmlAttrs: {
       lang: 'en'
     },
@@ -32,7 +32,7 @@ export default {
       { name: 'format-detection', content: 'telephone=no' }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      { rel: 'icon', type: 'image/x-icon', href: '/logo.png' }
     ]
   },
 
