@@ -113,7 +113,7 @@
               <svg 
                 v-if="svg"
                 width="640px" height="480px" viewBox="0 0 640 480"
-                v-html="svgFeeder + slicedSvg"
+                v-html="slicedSvg"
               />
 
             </div>
