@@ -16,52 +16,55 @@
       </p>
     </template>
     <template v-else>
-      <b-button
-        variant="light"
-        size="sm"
-        class="m-2"
-        @click="settings.openAIKey = ''"
-        style="position: absolute; bottom: 0; left: 0;"
-      >
-        Change API key
-      </b-button>
       <b-form
         @submit.prevent="generateFromScratch()"
       >
         <!-- Input for what do draw -->
-        <input
-          type="text"
-          v-model="settings.svarog.query"
-          placeholder="a pen? a car? a very tall person?"
-          class="form-control mb-2"
-        />
-        <!-- Slider for settings.generate.temperature (0 to 1, step 0.1) -->
-        <label
-          class="mb-2"
-          for="temperature"
+        <b-form-group
+          label="What do you want to draw?"
+          label-for="draw"
         >
-          How crazy do you want the output to be?
-        </label>
-        <b-input
-          id="temperature"
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
-          :value="settings.generate.temperature"
-          @input="settings.generate.temperature = Number($event)"
-          class="mb-2"
-          style="display: block; width: 200px"
-        />
+          <input
+            id="draw"
+            type="text"
+            v-model="query"
+            placeholder="a pen? a car? a very tall person?"
+            class="form-control mb-2"
+            :disabled="!!edit"
+          />
+        </b-form-group>
+        <!-- Slider for settings.generate.temperature (0 to 1, step 0.1) -->
+        <b-form-group
+          label="How crazy do you want it?"
+          label-for="temperature"
+        >
+          <b-input
+            id="temperature"
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            :value="settings.generate.temperature"
+            @input="settings.generate.temperature = Number($event)"
+            class="mb-2"
+            style="display: block; width: 200px"
+          />
+        </b-form-group>
+        <!-- Input to edit the result -->
+        <b-form-group
+          v-if="svg"
+          label="Edit the result"
+          label-for="edit"
+        >
+          <b-input
+            id="edit"
+            type="text"
+            v-model="edit"
+            placeholder="e.g. make it green"
+            class="form-control mb-2"
+          />
+        </b-form-group>
         <template v-if="!generating">
-          <!-- Button to generate the svg -->
-          <b-button
-            :type="svg ? 'button' : 'submit'"
-            :variant="svg ? 'outline-secondary' : 'primary'"
-            @click="generateFromScratch()"
-          >
-            {{ svg ? 'Retry' : 'Generate' }}
-          </b-button>
           <!-- Button to continue drawing -->
           <b-button
             v-if="svg"
@@ -69,7 +72,33 @@
             variant="primary"
             @click="generate"
           >
-            Draw more
+            {{ edit ? 'Redraw' : 'Continue drawing' }}
+          </b-button>
+          <!-- Button to retry -->
+          <b-button
+            v-if="svg"
+            type="button"
+            variant="outline-secondary"
+            @click="retry"
+          >
+            Retry
+          </b-button>
+          <!-- Button to generate the svg -->
+          <b-button
+            :type="svg ? 'button' : 'submit'"
+            :variant="svg ? 'outline-secondary' : 'primary'"
+            @click="generateFromScratch()"
+          >
+            {{ svg ? 'Draw from scratch' : 'Draw' }}
+          </b-button>
+          <!-- Button to reset all -->
+          <b-button
+            v-if="svg"
+            type="button"
+            variant="outline-danger"
+            @click.prevent="reset"
+          >
+            Reset all
           </b-button>
         </template>
         <b-spinner v-else/>
@@ -84,7 +113,7 @@
               <svg 
                 v-if="svg"
                 width="640px" height="480px" viewBox="0 0 640 480"
-                v-html="cleanedSvg"
+                v-html="svgFeeder + cleanedSvg"
               />
 
             </div>
@@ -94,7 +123,7 @@
             <b-form-group
               label="SVG code"
               label-for="svg-code"
-              :description="!svg && 'Enter initial SVG, if needed'"
+              :description="svg ? '' : 'Enter initial SVG, if needed'"
             >
               <b-textarea
                 id="svg-code"
@@ -102,7 +131,7 @@
                 lazy
                 class="mb-2"
                 rows="10"
-                style="font-family: monospace"
+                style="font-family: monospace; font-size: 0.8rem"
               />
             </b-form-group>
             <!-- Slider to cut off the SVG at a certain point -->
@@ -125,9 +154,18 @@
                 style="display: block; width: 100%"
               />
             </b-form-group>
+            <b-button
+              variant="light"
+              size="sm"
+              class="m-2"
+              @click="settings.openAIKey = ''"
+            >
+              Change API key
+            </b-button>
           </div>
         </div>
       </div>
+
     </template>
 
   </div>
@@ -137,6 +175,7 @@
 
   import axios from 'axios'
   import syncLocal from '~/plugins/syncLocal'
+  import _ from 'lodash'
 
   export default {
 
@@ -145,7 +184,6 @@
     data() {
 
       return {
-        query: '',
         settings: {
           openAIKey: '',
           generate: {
@@ -158,11 +196,28 @@
         svg: null,
         cutoff: null,
         generating: false,
+        edit: null,
+        old: {
+          query: '',
+          svg: null,
+          cutoff: null,
+        },
+        svgFeeder: // a white rectangle and a feeder for a comment
+          '<!-- Canvas -->\n<rect width="640" height="480" fill="#fff"/>\n<!--',
       }
 
     },
 
     computed: {
+
+      query: {
+        get() {
+          return this.settings.svarog.query
+        },
+        set(value) {
+          this.settings.svarog.query = value
+        }
+      },
 
       slicedSvg: {
         get() {
@@ -208,20 +263,63 @@
 
       async generate() {
 
-        let engine = 'text-davinci-002'
+        let { 
+          edit, 
+          settings: { 
+            generate: { temperature } 
+          },
+          svg, cutoff, query,
+          slicedSvg, svgFeeder
+        } = this
 
-        let prompt = `Draw ${this.settings.svarog.query} using simple SVG shapes.\n\n<svg width="640px" height="480px" viewBox="0 0 640 480">${this.slicedSvg}`
+        this.old = {
+          query,
+          svg,
+          cutoff,
+        }
+        
+        if ( !slicedSvg ) slicedSvg = svgFeeder
 
-        let { temperature } = this.settings.generate
+        let engine = edit ? 'text-davinci-edit-001' : 'text-davinci-002'
+        let prompt = edit || 
+          `Draw ${query} using simple SVG shapes.\n\n<svg width="640px" height="480px" viewBox="0 0 640 480">${slicedSvg}`
+        let input = edit && this.slicedSvg
+        let endpoint = edit ? 'edits' : 'completions'
+        let instruction = edit && `This is ${query}. ${_.upperFirst(edit)}`
 
         try {
 
           this.generating = true
 
+          if ( edit ) {
+            // Also change the query
+            axios.post(
+              `https://api.openai.com/v1/engines/${engine}/edits`,
+              { 
+                input: `Image caption: "${query}"`,
+                instruction: `Edit the caption to incorporate the edit: "${edit}"`,
+                temperature: 0
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${this.settings.openAIKey}`
+                }
+              }
+            ).then(({ data: {choices: [{ text }]} }) => {
+              console.log(text)
+              // Extract the query from the new caption
+              this.query = text.match(/"([\s\S]*?)"/)[1].replace(/\s+/g, ' ')
+            })
+          }
+
           // Get the svg
           let { data: { choices: [{ text: output }] }} = await axios.post(
-            `https://api.openai.com/v1/engines/${engine}/completions`,
-            {
+            `https://api.openai.com/v1/engines/${engine}/${endpoint}`,
+            edit ? {
+              instruction,
+              input,
+              temperature,
+            } : {
               prompt,
               max_tokens: 250,
               temperature,
@@ -239,7 +337,12 @@
           // Remove everything after and including </svg>
           output = output.replace(/<\/svg>[\s\S]*/, '')
 
-          this.svg = this.slicedSvg + output
+
+          this.svg = edit ? output : slicedSvg + output
+
+          // Clean up the svg
+          this.svg = this.svg.trim().replace(/>[^<]*</g, '>\n<')
+
           this.cutoff = this.svg.length
 
         } catch (e) {
@@ -259,10 +362,23 @@
 
       },
 
-      async generateFromScratch() {
+      generateFromScratch() {
         this.svg = null
+        this.edit = null
         this.generate()
-      }
+      },
+
+      retry() {
+        Object.assign(this, this.old)
+        this.generate()
+      },
+
+      reset() {
+        this.query = ''
+        this.svg = null
+        this.cutoff = null
+        this.edit = null
+      },
 
     }
 
