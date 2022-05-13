@@ -113,7 +113,7 @@
               <svg 
                 v-if="svg"
                 width="640px" height="480px" viewBox="0 0 640 480"
-                v-html="svgFeeder + cleanedSvg"
+                v-html="svgFeeder + slicedSvg"
               />
 
             </div>
@@ -240,22 +240,24 @@
             this.svg?.slice(this.cutoff) || ''
           )
 
+          this.cutoff = value.length
+
         }
 
       },
 
-      cleanedSvg() {
-        let svg = this.slicedSvg
+      // cleanedSvg() {
+      //   let svg = this.slicedSvg
 
-        // If the output has an unclosed quotation or tag, close them one by one
-        if ( svg.match(/="[^"]*$/) )
-          svg += '"'
+      //   // If the output has an unclosed quotation or tag, close them one by one
+      //   if ( svg.match(/="[^"]*$/) )
+      //     svg += '"'
 
-        if ( svg.match(/<[^>]*$/) )
-          svg += '>'
+      //   if ( svg.match(/<[^>]*$/) )
+      //     svg += '>'
 
-        return svg
-      }
+      //   return svg
+      // }
 
     },
 
@@ -324,8 +326,8 @@
               max_tokens: 250,
               temperature,
               n: 1,
-              frequency_penalty: 1.5,
-              presence_penalty: 1.5
+              frequency_penalty: 0.5,
+              presence_penalty: 0.5
             },
             {
               headers: {
@@ -340,8 +342,12 @@
 
           this.svg = edit ? output : slicedSvg + output
 
+          // console.log(this.svg)
           // Clean up the svg
           this.svg = this.svg.trim().replace(/>[^<]*</g, '>\n<')
+          // console.log(this.svg)
+          // Remove the last unclosed tag
+          this.svg = this.svg.replace(/<[^>]*$/, '')
 
           this.cutoff = this.svg.length
 
