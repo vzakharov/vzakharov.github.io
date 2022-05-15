@@ -203,7 +203,7 @@
           cutoff: null,
         },
         svgFeeder: // a white rectangle and a feeder for a comment
-          '<!-- Canvas -->\n<rect width="640" height="480" fill="#fff"/>\n<!--',
+          '<!-- Canvas -->\n<rect width="640" height="480" fill="',
       }
 
     },
