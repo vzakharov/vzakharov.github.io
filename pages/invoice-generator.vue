@@ -96,10 +96,10 @@
 
             <template #cell(price)="{ item }">
               <Editable type="number" v-model="item.price" />
-              <!-- Close button to remove item, not shown for the topmost item -->
+              <!-- Close button to remove item, not shown if there's only one item -->
               <span 
                 class="close noprint" 
-                v-if="item !== invoice.items[0]"
+                v-if="invoice.items.length > 1"
                 @click="invoice.items = without(invoice.items, item)"
                 style="cursor: pointer;"
               >&times;</span>
@@ -219,6 +219,16 @@
   import { forEach, filter, identity, isArray, without, sumBy, upperFirst } from 'lodash'
 
   export default {
+
+    head() {
+
+      return {
+
+        title: this.invoice.number
+        
+      }
+
+    },
 
     data() {
 
