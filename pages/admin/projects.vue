@@ -81,6 +81,11 @@
                   sortable: true,
                 },
                 {
+                  key: 'payment.name',
+                  label: 'Payment',
+                  sortable: true,
+                },
+                {
                   key: 'type.name',
                   label: 'Type',
                   sortable: true,
@@ -136,6 +141,15 @@
                 />
               </template>
 
+              <template #[`cell(payment.name)`]="{ item }">
+                <span v-if="item.payment"
+                  :style="{
+                    backgroundColor: hex(item.payment.color)
+                  }"
+                  v-text="item.payment.name"
+                />
+              </template>
+
               <template #[`cell(type.name)`]="{ item }">
                 <span v-if="item.type"
                   :style="{
@@ -153,6 +167,18 @@
                   class="mr-2"
                   :options="[{ value: null, text: filters.status ? 'All' : 'Status' },
                     ...chain(allProjects).map('status.name').uniq().filter(identity).value()
+                  ]"
+                />
+              </template>
+
+              <template #[`head(payment.name)`]>
+                <!-- Dropdown to filter by payment status -->
+                <b-select
+                  v-model="filters.payment"
+                  size="sm"
+                  class="mr-2"
+                  :options="[{ value: null, text: filters.payment ? 'All' : 'Payment status' },
+                    ...chain(allProjects).map('payment.name').uniq().filter(identity).value()
                   ]"
                 />
               </template>
@@ -218,6 +244,17 @@
                   class="fw-normal small"
                 >
                   {{ status[0] }}:{{ count }}
+                </span>
+              </template>
+
+              <template #[`foot(payment.name)`]>
+                <!-- breakdown by payment status -->
+                <span
+                  v-for="( count, payment ) in countBy(projects, 'payment.name')"
+                  :key="payment"
+                  class="fw-normal small"
+                >
+                  {{ payment[0] }}:{{ count }}
                 </span>
               </template>
 
@@ -296,6 +333,7 @@
         filters: {
           customer: null,
           status: null,
+          payment: null,
           type: null,
           week: null,
           month: null
@@ -326,7 +364,7 @@
 
       projects() {
 
-        let { allProjects, filters: { status, type }, filters } = this
+        let { allProjects, filters: { status, payment, type }, filters } = this
 
         return filter( allProjects, project => {
 
@@ -386,7 +424,7 @@
         handler(filters) {
 
           // Update route only if it is not already same as filters
-          if ( JSON.stringify(pickBy(filters, identity)) !== JSON.stringify(pick(this.$route.query, ['status', 'type', 'customer', 'week', 'month'])) ) {
+          if ( JSON.stringify(pickBy(filters, identity)) !== JSON.stringify(pick(this.$route.query, ['status', 'payment', 'type', 'customer', 'week', 'month'])) ) {
             this.$router.push({
               query: {
                 ...this.$route.query,
@@ -406,12 +444,13 @@
 
           this.filters = {
             status: null,
+            payment: null,
             type: null,
             customer: null,
             week: null,
             month: null,
             ...mapValues(
-              pickBy(pick(query, ['status', 'type', 'customer', 'week', 'month']), identity),
+              pickBy(pick(query, ['status', 'payment', 'type', 'customer', 'week', 'month']), identity),
               // Convert to number for weeks
               ( value, key ) =>
                 [ 'week', 'month' ].includes(key) ? Number(value) : value
@@ -450,6 +489,7 @@
           case 'customer':
             return this.projectCustomerName(project)
           case 'status':
+          case 'payment':
           case 'type':
             return project[key]?.name
           default:
