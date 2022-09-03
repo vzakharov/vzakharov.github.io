@@ -309,6 +309,16 @@
               </template>
 
             </b-table>
+
+            <!-- Button to convert visible projects to an invoice -->
+            <b-button
+              v-if="projects.length"
+              variant="primary"
+              class="mt-3"
+              :to="invoiceUrl"
+            >
+              Create invoice
+            </b-button>
           </b-col>
         </b-row>
       </b-container>
@@ -413,6 +423,24 @@
             }
           })
         }
+      },
+
+      invoiceUrl() {
+
+        let { currency } = this
+
+        return '/invoice-generator?invoice=' + encodeURIComponent(JSON.stringify({
+          items: this.projects.map(({ name, words, [currency.toLowerCase() + 'Eq']: price }) => {
+            return {
+              title: name,
+              quantity: words,
+              price
+            }
+          }),
+          unit: 'words',
+          currency
+        }))
+
       }
 
     },
